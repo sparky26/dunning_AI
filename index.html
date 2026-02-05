@@ -216,7 +216,7 @@
 <div class="container">
   <header>
     <h1>The Dunning-Kruger of AI Disruption</h1>
-    <p>The global AI revolution follows the classic Dunning-Kruger curve &mdash; overconfidence peaks, reality crashes in, and only then does true productivity emerge. Four disruption waves mapped against real-world events, from the 2022 earthquake through the predicted 2029 stabilization.</p>
+    <p>The global AI revolution follows the classic Dunning-Kruger curve &mdash; overconfidence peaks, reality crashes in, and only then does true productivity emerge. Four disruption waves mapped against real-world events, from the 2022 earthquake through the predicted 2030 stabilization.</p>
     <p style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted); margin-top:10px; letter-spacing:0.5px;">A prediction by <strong style="color:var(--text-secondary);">Sparsh Gupta</strong> &mdash; Feb 2026</p>
   </header>
 
@@ -284,7 +284,7 @@
     <div class="era-card wave-4" data-wave="3">
       <div class="era-phase">Wave 4 &mdash; Recovery</div>
       <div class="era-title">The Super Team Equilibrium</div>
-      <div class="era-period">2028 &mdash; 2029+</div>
+      <div class="era-period">2029 &mdash; 2030+</div>
       <div class="era-desc">After the correction, the Super Team model matures: ~6 specialists (fullstack, security, ML, systems, maintainers) + AI agents. Sustainable productivity, stable market.</div>
       <div class="era-stats">
         <div class="era-stat"><div class="era-stat-value">~6</div><div class="era-stat-label">Team Size</div></div>
@@ -299,14 +299,14 @@
     <div class="dk-subtitle">How global market confidence overshoots, crashes, and stabilizes &mdash; the classic pattern playing out in real time</div>
     <div class="dk-flow">
       <div class="dk-node node-rise">
-        <div class="dk-node-phase">2022-2025</div>
+        <div class="dk-node-phase">2022-2026</div>
         <div class="dk-node-title">Rise of Hype</div>
         <div class="dk-node-team">50+ &rarr; 12</div>
         <div class="dk-node-desc">Teams slashed aggressively. "AI replaces everyone" narrative peaks. Overconfidence drives reckless adoption.</div>
       </div>
       <div class="dk-arrow">&rarr;</div>
       <div class="dk-node node-peak">
-        <div class="dk-node-phase">Peak: 2025</div>
+        <div class="dk-node-phase">Peak: 2026</div>
         <div class="dk-node-title">Mount Stupid</div>
         <div class="dk-node-team">4-8</div>
         <div class="dk-node-desc">Maximum overconfidence. Skeleton crews + AI. "We don't need engineers." Move fast, break everything.</div>
@@ -318,7 +318,7 @@
       </div>
       <div class="dk-arrow">&rarr;</div>
       <div class="dk-node node-valley">
-        <div class="dk-node-phase">2026-2027</div>
+        <div class="dk-node-phase">2027-2028</div>
         <div class="dk-node-title">Valley of Despair</div>
         <div class="dk-node-team">Re-hire to 15+</div>
         <div class="dk-node-desc">Reality crashes in. AI-generated bugs, security breaches, outages. Companies scramble to re-hire. AI bubble deflates. Startups fail.</div>
@@ -330,14 +330,14 @@
       </div>
       <div class="dk-arrow">&rarr;</div>
       <div class="dk-node node-slope">
-        <div class="dk-node-phase">2027-2028</div>
+        <div class="dk-node-phase">2028-2029</div>
         <div class="dk-node-title">Slope of Enlightenment</div>
         <div class="dk-node-team">8-10</div>
         <div class="dk-node-desc">Understanding what AI does well vs. what needs humans. Quality frameworks emerge. AI-human collaboration matures.</div>
       </div>
       <div class="dk-arrow">&rarr;</div>
       <div class="dk-node node-plateau">
-        <div class="dk-node-phase">2029+</div>
+        <div class="dk-node-phase">2030+</div>
         <div class="dk-node-title">Plateau of Productivity</div>
         <div class="dk-node-team">~6</div>
         <div class="dk-node-desc">Stable Super Team model. Fullstack, Security, ML, Systems, Maintainers + AI. Sustainable, proven, productive.</div>
@@ -377,57 +377,60 @@
 <script>
 // ============ CONSTANTS ============
 const YEAR_START = 2022.5;
-const YEAR_END = 2029.5;
+const YEAR_END = 2030.7;
 const CURRENT_YEAR = 2026.1;
 const PREDICTION_START = 2025.8;
-const STABILIZATION_START = 2028.5;
+const STABILIZATION_START = 2029.7;
 
 // ============ DUNNING-KRUGER COMPOSITE CURVE ============
 const DK_POINTS = [
   { year: 2022.5, value: 0.03 },
-  { year: 2023.0, value: 0.18 },
-  { year: 2023.4, value: 0.34 },
-  { year: 2023.8, value: 0.48 },
-  { year: 2024.2, value: 0.62 },
-  { year: 2024.6, value: 0.76 },
-  { year: 2025.0, value: 0.88 },   // PEAK OF MOUNT STUPID
-  { year: 2025.3, value: 0.86 },
-  { year: 2025.7, value: 0.72 },
-  { year: 2026.0, value: 0.55 },
-  { year: 2026.4, value: 0.40 },
-  { year: 2026.8, value: 0.30 },
-  { year: 2027.1, value: 0.25 },   // VALLEY OF DESPAIR
-  { year: 2027.4, value: 0.27 },
-  { year: 2027.7, value: 0.34 },
-  { year: 2028.0, value: 0.44 },
-  { year: 2028.3, value: 0.52 },
-  { year: 2028.6, value: 0.58 },
-  { year: 2029.0, value: 0.64 },   // PLATEAU OF PRODUCTIVITY
-  { year: 2029.3, value: 0.66 },
-  { year: 2029.5, value: 0.67 },
+  { year: 2023.0, value: 0.10 },
+  { year: 2023.5, value: 0.18 },
+  { year: 2024.0, value: 0.28 },
+  { year: 2024.4, value: 0.38 },
+  { year: 2024.8, value: 0.48 },
+  { year: 2025.2, value: 0.58 },
+  { year: 2025.6, value: 0.70 },
+  { year: 2026.0, value: 0.82 },
+  { year: 2026.2, value: 0.88 },   // PEAK OF MOUNT STUPID
+  { year: 2026.5, value: 0.86 },
+  { year: 2026.9, value: 0.72 },
+  { year: 2027.2, value: 0.55 },
+  { year: 2027.6, value: 0.40 },
+  { year: 2028.0, value: 0.30 },
+  { year: 2028.3, value: 0.25 },   // VALLEY OF DESPAIR
+  { year: 2028.6, value: 0.27 },
+  { year: 2028.9, value: 0.34 },
+  { year: 2029.2, value: 0.44 },
+  { year: 2029.5, value: 0.52 },
+  { year: 2029.8, value: 0.58 },
+  { year: 2030.2, value: 0.64 },   // PLATEAU OF PRODUCTIVITY
+  { year: 2030.5, value: 0.66 },
+  { year: 2030.7, value: 0.67 },
 ];
 
 // DK Phase definitions
 const DK_PHASES = [
-  { start: 2022.5, end: 2024.8, label: 'Rise of Hype', color: 'rgba(168,85,247,0.04)', textColor: 'rgba(168,85,247,0.5)' },
-  { start: 2024.8, end: 2025.6, label: 'Peak of Mount Stupid', color: 'rgba(239,68,68,0.06)', textColor: 'rgba(239,68,68,0.6)' },
-  { start: 2025.6, end: 2027.3, label: 'Valley of Despair', color: 'rgba(59,130,246,0.04)', textColor: 'rgba(59,130,246,0.5)' },
-  { start: 2027.3, end: 2028.5, label: 'Slope of Enlightenment', color: 'rgba(34,197,94,0.04)', textColor: 'rgba(34,197,94,0.5)' },
-  { start: 2028.5, end: 2029.5, label: 'Plateau of Productivity', color: 'rgba(245,158,11,0.05)', textColor: 'rgba(245,158,11,0.55)' },
+  { start: 2022.5, end: 2026.0, label: 'Rise of Hype', color: 'rgba(168,85,247,0.04)', textColor: 'rgba(168,85,247,0.5)' },
+  { start: 2026.0, end: 2026.8, label: 'Peak of Mount Stupid', color: 'rgba(239,68,68,0.06)', textColor: 'rgba(239,68,68,0.6)' },
+  { start: 2026.8, end: 2028.5, label: 'Valley of Despair', color: 'rgba(59,130,246,0.04)', textColor: 'rgba(59,130,246,0.5)' },
+  { start: 2028.5, end: 2029.7, label: 'Slope of Enlightenment', color: 'rgba(34,197,94,0.04)', textColor: 'rgba(34,197,94,0.5)' },
+  { start: 2029.7, end: 2030.7, label: 'Plateau of Productivity', color: 'rgba(245,158,11,0.05)', textColor: 'rgba(245,158,11,0.55)' },
 ];
 
 // DK line events (plotted ON the composite curve)
 const DK_EVENTS = [
   { year: 2023.3,  label: '2023: Record 260K+ tech layoffs', labelPos: 'above', desc: 'The biggest year for tech layoffs in recorded history. Twitter/X, Meta, Google, Microsoft, Amazon all slash headcounts. Over-hiring meets AI pivot — companies frame cuts as "rebalancing to focus on AI."', source: 'Layoffs.fyi / TrueUp trackers, 2023' },
   { year: 2024.5,  label: 'Goldman: "$600B AI gap"', labelPos: 'below', desc: 'Goldman Sachs analyst Jim Covello questions whether AI spending will ever deliver returns. Sequoia flags a "$600B revenue gap" between AI infrastructure costs and actual revenue.', source: 'Goldman Sachs / Sequoia, Jun 2024' },
-  { year: 2025.0,  label: 'PEAK HYPE', labelPos: 'above', desc: 'Maximum market overconfidence. Every company claims to be "AI-first." Salesforce CEO declares no more SWE hiring. The narrative: AI will replace all developers within 2 years.', source: 'Various, early 2025' },
   { year: 2025.5,  label: 'Gartner: "Peak of Inflated Expectations"', labelPos: 'below', desc: 'Gartner Hype Cycle places Generative AI squarely at the "Peak of Inflated Expectations," warning the Trough of Disillusionment is imminent.', source: 'Gartner Hype Cycle, 2025' },
-  { year: 2026.0,  label: 'AI code quality crisis', labelPos: 'above', desc: 'Reports surface of massive technical debt from unchecked AI-generated code. Security vulnerabilities in AI code lead to breaches. Companies realize "move fast" broke too many things.', source: 'Predicted, 2026' },
-  { year: 2026.5,  label: 'AI startup failures surge', labelPos: 'below', desc: 'Over-funded AI startups begin failing. VC pullback accelerates. The gap between AI promises and AI delivery becomes undeniable. Dot-com parallels intensify.', source: 'Predicted, 2026' },
-  { year: 2027.1,  label: 'VALLEY BOTTOM: Re-hiring wave', labelPos: 'above', desc: 'Companies that over-cut scramble to re-hire. "We need humans who understand the code AI wrote." Experienced engineers command premium. Market hits bottom.', source: 'Predicted, 2027' },
-  { year: 2027.7,  label: 'AI-human frameworks emerge', labelPos: 'below', desc: 'Industry develops mature frameworks for AI-human collaboration. Best practices for AI code review, testing, and quality assurance become standard.', source: 'Predicted, 2027' },
-  { year: 2028.3,  label: 'Super Team model validated', labelPos: 'above', desc: 'Multiple orgs demonstrate that the ~6-person Super Team + AI agents model delivers sustainable 10x productivity without quality degradation.', source: 'Predicted, 2028' },
-  { year: 2029.0,  label: 'EQUILIBRIUM REACHED', labelPos: 'below', desc: 'Market stabilizes. New education pipelines, new roles, sustainable team models. AI is a tool, not a replacement. The Dunning-Kruger cycle completes.', source: 'Predicted, 2029' },
+  { year: 2026.2,  label: 'PEAK HYPE', labelPos: 'above', desc: 'Maximum market overconfidence. Every company claims to be "AI-first." The narrative: AI will replace all developers within 2 years. Skeleton crews + AI agents become the norm.', source: 'Various, 2026' },
+  { year: 2027.2,  label: 'AI code quality crisis', labelPos: 'above', desc: 'Reports surface of massive technical debt from unchecked AI-generated code. Security vulnerabilities in AI code lead to breaches. Companies realize "move fast" broke too many things.', source: 'Predicted, 2027' },
+  { year: 2027.7,  label: 'AI startup failures surge', labelPos: 'below', desc: 'Over-funded AI startups begin failing. VC pullback accelerates. The gap between AI promises and AI delivery becomes undeniable. Dot-com parallels intensify.', source: 'Predicted, 2027' },
+  { year: 2028.3,  label: 'VALLEY BOTTOM: Re-hiring wave', labelPos: 'above', desc: 'Companies that over-cut scramble to re-hire. "We need humans who understand the code AI wrote." Experienced engineers command premium. Market hits bottom.', source: 'Predicted, 2028' },
+  { year: 2028.9,  label: 'AI-human frameworks emerge', labelPos: 'below', desc: 'Industry develops mature frameworks for AI-human collaboration. Best practices for AI code review, testing, and quality assurance become standard.', source: 'Predicted, 2028' },
+  { year: 2029.5,  label: 'Super Team model validated', labelPos: 'above', desc: 'Multiple orgs demonstrate that the ~6-person Super Team + AI agents model delivers sustainable 10x productivity without quality degradation.', source: 'Predicted, 2029' },
+  { year: 2030.2,  label: 'EQUILIBRIUM REACHED', labelPos: 'below', desc: 'Market stabilizes. New education pipelines, new roles, sustainable team models. AI is a tool, not a replacement. The Dunning-Kruger cycle completes.', source: 'Predicted, 2030' },
 ];
 
 // ============ 4 DISRUPTION WAVES ============
@@ -483,12 +486,12 @@ const WAVES = [
   {
     name: 'The Super Team Equilibrium', shortName: 'Super Teams',
     color: '#f59e0b', colorRGB: [245, 158, 11],
-    center: 2028.5, sigma: 0.65, amplitude: 0.75, startYear: 2027.5,
+    center: 2029.7, sigma: 0.65, amplitude: 0.75, startYear: 2028.7,
     events: [
-      { year: 2027.75, label: 'AI-human collab matures', major: false, labelPos: 'above', desc: 'Prediction: Industry develops robust frameworks for AI-human pair programming, code review, and quality assurance.', source: 'Predicted' },
-      { year: 2028.17, label: 'Super Team pilots work', major: true, labelPos: 'below', desc: 'Prediction: Early Super Team adopters demonstrate sustainable 10x productivity. Model validated across industries.', source: 'Predicted' },
-      { year: 2028.5, label: 'Enterprise adoption', major: true, labelPos: 'above', desc: 'Prediction: Fortune 500s adopt Super Team model. ~6 specialists: fullstack, security, ML, systems, maintainers + AI agents.', source: 'Predicted' },
-      { year: 2029.0, label: 'Market equilibrium', major: true, labelPos: 'below', desc: 'Prediction: Stable new normal. AI tools mature, education pipelines adapt, sustainable team models proven. The DK cycle completes.', source: 'Predicted' },
+      { year: 2028.95, label: 'AI-human collab matures', major: false, labelPos: 'above', desc: 'Prediction: Industry develops robust frameworks for AI-human pair programming, code review, and quality assurance.', source: 'Predicted' },
+      { year: 2029.37, label: 'Super Team pilots work', major: true, labelPos: 'below', desc: 'Prediction: Early Super Team adopters demonstrate sustainable 10x productivity. Model validated across industries.', source: 'Predicted' },
+      { year: 2029.7, label: 'Enterprise adoption', major: true, labelPos: 'above', desc: 'Prediction: Fortune 500s adopt Super Team model. ~6 specialists: fullstack, security, ML, systems, maintainers + AI agents.', source: 'Predicted' },
+      { year: 2030.2, label: 'Market equilibrium', major: true, labelPos: 'below', desc: 'Prediction: Stable new normal. AI tools mature, education pipelines adapt, sustainable team models proven. The DK cycle completes.', source: 'Predicted' },
     ]
   }
 ];
@@ -575,7 +578,7 @@ function drawGrid() {
   ctx.strokeStyle = 'rgba(148,163,184,0.05)';
   ctx.lineWidth = 1;
   for (let v = 0; v <= 1; v += 0.2) { const y = valToY(v); ctx.beginPath(); ctx.moveTo(PADDING.left, y); ctx.lineTo(W - PADDING.right, y); ctx.stroke(); }
-  for (let yr = 2023; yr <= 2029; yr++) { const x = yearToX(yr); ctx.beginPath(); ctx.moveTo(x, PADDING.top); ctx.lineTo(x, H - PADDING.bottom); ctx.stroke(); }
+  for (let yr = 2023; yr <= 2030; yr++) { const x = yearToX(yr); ctx.beginPath(); ctx.moveTo(x, PADDING.top); ctx.lineTo(x, H - PADDING.bottom); ctx.stroke(); }
   // Y labels
   ctx.font = '11px "JetBrains Mono", monospace'; ctx.fillStyle = 'rgba(148,163,184,0.35)';
   ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
@@ -586,7 +589,7 @@ function drawGrid() {
   // X labels
   ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillStyle = 'rgba(148,163,184,0.4)';
   ctx.font = '12px "JetBrains Mono", monospace';
-  for (let yr = 2023; yr <= 2029; yr++) ctx.fillText(yr+'', yearToX(yr), H-PADDING.bottom+12);
+  for (let yr = 2023; yr <= 2030; yr++) ctx.fillText(yr+'', yearToX(yr), H-PADDING.bottom+12);
 }
 
 function drawPredictionZones() {
@@ -904,7 +907,7 @@ document.querySelectorAll('.era-card').forEach((c,i)=>{
 
 function buildYearLabels(){
   const c=document.getElementById('yearLabels');c.innerHTML='';
-  for(let yr=2023;yr<=2029;yr++){const s=document.createElement('span');s.className='year-label';s.textContent=yr;c.appendChild(s);}
+  for(let yr=2023;yr<=2030;yr++){const s=document.createElement('span');s.className='year-label';s.textContent=yr;c.appendChild(s);}
 }
 
 function init(){resize();buildYearLabels();animProgress=0;requestAnimationFrame(animate);setTimeout(()=>{isPlaying=true;updatePlayBtn();},800);}
