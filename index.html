@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Dunning-Kruger of AI Disruption</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg-primary: #0a0e1a;
+    --bg-secondary: #111827;
+    --bg-card: #1a2035;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border: #1e293b;
+    --wave1: #ef4444;
+    --wave2: #06b6d4;
+    --wave3: #a855f7;
+    --wave4: #f59e0b;
+    --dk-line: #f0f0f0;
+    --dk-peak: #ef4444;
+    --dk-valley: #3b82f6;
+    --dk-slope: #22c55e;
+    --dk-plateau: #f59e0b;
+  }
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .page-bg {
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99,55,180,0.15), transparent),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(6,182,212,0.08), transparent),
+      radial-gradient(ellipse 60% 40% at 10% 80%, rgba(239,68,68,0.06), transparent);
+    pointer-events: none; z-index: 0;
+  }
+  .container {
+    position: relative; z-index: 1;
+    max-width: 1440px; margin: 0 auto;
+    padding: 40px 30px 60px;
+  }
+  header { text-align: center; margin-bottom: 50px; }
+  header h1 {
+    font-size: 2.6rem; font-weight: 800; letter-spacing: -1.5px;
+    background: linear-gradient(135deg, #e2e8f0 10%, #ef4444 30%, #a78bfa 50%, #22c55e 70%, #f59e0b 90%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; margin-bottom: 12px; line-height: 1.2;
+  }
+  header p {
+    font-size: 1.05rem; color: var(--text-secondary);
+    font-weight: 300; max-width: 780px; margin: 0 auto; line-height: 1.6;
+  }
+  .chart-section {
+    position: relative; background: var(--bg-secondary);
+    border: 1px solid var(--border); border-radius: 20px;
+    padding: 30px 20px 20px; margin-bottom: 30px; overflow: hidden;
+  }
+  .chart-section::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(239,68,68,0.4), rgba(168,85,247,0.4), rgba(34,197,94,0.4), rgba(245,158,11,0.4), transparent);
+  }
+  .chart-wrapper { position: relative; width: 100%; height: 600px; }
+  #mainCanvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+
+  .event-popup {
+    position: absolute; pointer-events: none;
+    background: rgba(10,14,26,0.97); border-radius: 10px;
+    padding: 12px 16px; max-width: 300px; opacity: 0;
+    transition: opacity 0.18s ease; z-index: 120;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+  }
+  .event-popup.visible { opacity: 1; }
+  .event-popup-date { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+  .event-popup-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .event-popup-desc { font-size: 11px; color: var(--text-secondary); line-height: 1.5; }
+  .event-popup-source { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-muted); margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(148,163,184,0.1); }
+
+  .tooltip {
+    position: absolute; pointer-events: none;
+    background: rgba(15,20,35,0.95); border: 1px solid rgba(148,163,184,0.2);
+    border-radius: 12px; padding: 14px 18px; font-size: 13px;
+    color: var(--text-primary); backdrop-filter: blur(20px);
+    min-width: 260px; opacity: 0; transition: opacity 0.15s ease;
+    z-index: 100; box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  }
+  .tooltip.visible { opacity: 1; }
+  .tooltip-year { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(148,163,184,0.1); }
+  .tooltip-item { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+  .tooltip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .tooltip-label { flex: 1; font-size: 12px; color: var(--text-secondary); }
+  .tooltip-value { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 12px; }
+  .tooltip-dk { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(148,163,184,0.1); font-size: 11px; }
+  .tooltip-dk-label { color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .tooltip-dk-phase { font-weight: 600; margin-top: 2px; }
+
+  .controls { display: flex; align-items: center; gap: 20px; padding: 20px 10px 0; }
+  .play-btn {
+    width: 48px; height: 48px; border-radius: 50%;
+    border: 2px solid rgba(168,85,247,0.4); background: rgba(168,85,247,0.1);
+    color: #a855f7; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s ease; flex-shrink: 0;
+  }
+  .play-btn:hover { background: rgba(168,85,247,0.2); border-color: rgba(168,85,247,0.6); transform: scale(1.05); }
+  .play-btn svg { width: 18px; height: 18px; }
+  .slider-container { flex: 1; position: relative; }
+  .timeline-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 3px; background: var(--border); outline: none; cursor: pointer; }
+  .timeline-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #a855f7; border: 3px solid var(--bg-secondary); box-shadow: 0 0 12px rgba(168,85,247,0.5); cursor: pointer; }
+  .timeline-slider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #a855f7; border: 3px solid var(--bg-secondary); box-shadow: 0 0 12px rgba(168,85,247,0.5); cursor: pointer; }
+  .speed-btn { font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+  .speed-btn:hover { border-color: rgba(168,85,247,0.4); color: #a855f7; background: rgba(168,85,247,0.1); }
+  .year-labels { display: flex; justify-content: space-between; padding: 8px 0 0; margin-left: 68px; }
+  .year-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); letter-spacing: 0.5px; }
+
+  /* Era Cards */
+  .eras-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 30px; }
+  .era-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 22px; cursor: pointer; transition: all 0.3s ease; position: relative; overflow: hidden; }
+  .era-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; opacity: 0.6; transition: opacity 0.3s; }
+  .era-card:hover::before, .era-card.active::before { opacity: 1; }
+  .era-card.wave-1::before { background: var(--wave1); }
+  .era-card.wave-2::before { background: var(--wave2); }
+  .era-card.wave-3::before { background: var(--wave3); }
+  .era-card.wave-4::before { background: var(--wave4); }
+  .era-card:hover, .era-card.active { transform: translateY(-4px); border-color: rgba(148,163,184,0.2); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+  .era-card.active.wave-1 { border-color: rgba(239,68,68,0.3); }
+  .era-card.active.wave-2 { border-color: rgba(6,182,212,0.3); }
+  .era-card.active.wave-3 { border-color: rgba(168,85,247,0.3); }
+  .era-card.active.wave-4 { border-color: rgba(245,158,11,0.3); }
+  .era-phase { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+  .wave-1 .era-phase { color: var(--wave1); }
+  .wave-2 .era-phase { color: var(--wave2); }
+  .wave-3 .era-phase { color: var(--wave3); }
+  .wave-4 .era-phase { color: var(--wave4); }
+  .era-title { font-size: 1rem; font-weight: 700; margin-bottom: 6px; line-height: 1.3; }
+  .era-period { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); margin-bottom: 10px; }
+  .era-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.55; }
+  .era-stats { display: flex; gap: 14px; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(148,163,184,0.08); }
+  .era-stat { flex: 1; }
+  .era-stat-value { font-family: 'JetBrains Mono', monospace; font-size: 17px; font-weight: 700; }
+  .wave-1 .era-stat-value { color: var(--wave1); }
+  .wave-2 .era-stat-value { color: var(--wave2); }
+  .wave-3 .era-stat-value { color: var(--wave3); }
+  .wave-4 .era-stat-value { color: var(--wave4); }
+  .era-stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+  /* DK Journey Section */
+  .dk-section { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 20px; padding: 36px; position: relative; overflow: hidden; margin-bottom: 30px; }
+  .dk-section::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(239,68,68,0.4), rgba(59,130,246,0.4), rgba(34,197,94,0.4), rgba(245,158,11,0.4), transparent); }
+  .dk-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; }
+  .dk-subtitle { color: var(--text-secondary); font-size: 13px; margin-bottom: 28px; }
+  .dk-flow { display: flex; align-items: stretch; gap: 0; }
+  .dk-node { flex: 1; text-align: center; padding: 20px 10px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-card); transition: all 0.3s; }
+  .dk-node:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.2); }
+  .dk-arrow { display: flex; align-items: center; justify-content: center; width: 36px; flex-shrink: 0; color: var(--text-muted); font-size: 18px; }
+  .dk-node-phase { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+  .dk-node-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+  .dk-node-team { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 800; margin: 6px 0 4px; }
+  .dk-node-desc { font-size: 10px; color: var(--text-muted); line-height: 1.4; }
+  .dk-node-tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; }
+  .dk-tag { font-size: 8px; padding: 2px 6px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; }
+
+  .node-rise .dk-node-phase { color: var(--wave3); }
+  .node-rise .dk-node-team { color: var(--wave3); }
+  .node-peak .dk-node-phase { color: var(--dk-peak); }
+  .node-peak .dk-node-team { color: var(--dk-peak); }
+  .node-valley .dk-node-phase { color: var(--dk-valley); }
+  .node-valley .dk-node-team { color: var(--dk-valley); }
+  .node-slope .dk-node-phase { color: var(--dk-slope); }
+  .node-slope .dk-node-team { color: var(--dk-slope); }
+  .node-plateau .dk-node-phase { color: var(--dk-plateau); }
+  .node-plateau .dk-node-team { color: var(--dk-plateau); }
+
+  .node-peak .dk-tag { background: rgba(239,68,68,0.1); color: var(--dk-peak); border: 1px solid rgba(239,68,68,0.2); }
+  .node-valley .dk-tag { background: rgba(59,130,246,0.1); color: var(--dk-valley); border: 1px solid rgba(59,130,246,0.2); }
+  .node-plateau .dk-tag { background: rgba(245,158,11,0.1); color: var(--dk-plateau); border: 1px solid rgba(245,158,11,0.2); }
+
+  @media (max-width: 1000px) {
+    .eras-grid { grid-template-columns: repeat(2, 1fr); }
+    .dk-flow { flex-wrap: wrap; gap: 8px; }
+    .dk-arrow { display: none; }
+    .dk-node { min-width: calc(50% - 8px); }
+    header h1 { font-size: 2rem; }
+    .container { padding: 20px 16px 40px; }
+  }
+  /* Author Footer */
+  .author-footer { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 20px; padding: 32px 36px; position: relative; overflow: hidden; }
+  .author-footer::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(148,163,184,0.15), rgba(168,85,247,0.3), rgba(148,163,184,0.15), transparent); }
+  .author-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .author-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); }
+  .author-name { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.5px; }
+  .author-name span { background: linear-gradient(135deg, #e2e8f0, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .author-title { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+  .author-credentials { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; padding: 16px 0; border-top: 1px solid rgba(148,163,184,0.06); border-bottom: 1px solid rgba(148,163,184,0.06); }
+  .author-cred { font-size: 10px; padding: 4px 10px; border-radius: 6px; background: rgba(148,163,184,0.04); border: 1px solid rgba(148,163,184,0.08); color: var(--text-secondary); font-family: 'Inter', sans-serif; }
+  .author-cred strong { color: var(--text-primary); font-weight: 600; }
+  .author-note { font-size: 11px; color: var(--text-muted); line-height: 1.6; max-width: 800px; }
+  .author-copyright { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-muted); margin-top: 14px; letter-spacing: 0.5px; opacity: 0.6; }
+
+  @media (max-width: 600px) {
+    .eras-grid { grid-template-columns: 1fr; }
+    .dk-node { min-width: 100%; }
+    .chart-wrapper { height: 420px; }
+    header h1 { font-size: 1.6rem; }
+    .author-top { flex-direction: column; align-items: flex-start; gap: 4px; }
+    .author-credentials { gap: 5px; }
+  }
+</style>
+</head>
+<body>
+<div class="page-bg"></div>
+<div class="container">
+  <header>
+    <h1>The Dunning-Kruger of AI Disruption</h1>
+    <p>The global AI revolution follows the classic Dunning-Kruger curve &mdash; overconfidence peaks, reality crashes in, and only then does true productivity emerge. Four disruption waves mapped against real-world events, from the 2022 earthquake through the predicted 2029 stabilization.</p>
+    <p style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted); margin-top:10px; letter-spacing:0.5px;">A prediction by <strong style="color:var(--text-secondary);">Sparsh Gupta</strong> &mdash; Feb 2026</p>
+  </header>
+
+  <div class="chart-section">
+    <div class="chart-wrapper" id="chartWrapper">
+      <canvas id="mainCanvas"></canvas>
+      <div class="tooltip" id="tooltip">
+        <div class="tooltip-year" id="tooltipYear"></div>
+        <div id="tooltipItems"></div>
+        <div class="tooltip-dk" id="tooltipDK" style="display:none">
+          <div class="tooltip-dk-label">Market Confidence</div>
+          <div class="tooltip-dk-phase" id="tooltipDKPhase"></div>
+        </div>
+      </div>
+      <div class="event-popup" id="eventPopup">
+        <div class="event-popup-date" id="epDate"></div>
+        <div class="event-popup-title" id="epTitle"></div>
+        <div class="event-popup-desc" id="epDesc"></div>
+        <div class="event-popup-source" id="epSource"></div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="play-btn" id="playBtn" title="Play animation">
+        <svg viewBox="0 0 24 24" fill="currentColor" id="playIcon"><polygon points="6,3 20,12 6,21" /></svg>
+      </button>
+      <div class="slider-container">
+        <input type="range" class="timeline-slider" id="timelineSlider" min="0" max="1000" value="0">
+        <div class="year-labels" id="yearLabels"></div>
+      </div>
+      <button class="speed-btn" id="speedBtn">1x</button>
+    </div>
+  </div>
+
+  <div class="eras-grid">
+    <div class="era-card wave-1" data-wave="0">
+      <div class="era-phase">Wave 1</div>
+      <div class="era-title">The ChatGPT Earthquake</div>
+      <div class="era-period">Nov 2022 &mdash; Mid 2023</div>
+      <div class="era-desc">Twitter/X cuts 50% overnight. ChatGPT launches to 100M users. Meta (11K), Google (12K), Microsoft (10K), Amazon (18K+) all slash headcounts. Stack Overflow and Chegg collapse. 60K+ tech jobs gone in 2023 alone.</div>
+      <div class="era-stats">
+        <div class="era-stat"><div class="era-stat-value">-50%</div><div class="era-stat-label">SO Traffic</div></div>
+        <div class="era-stat"><div class="era-stat-value">60K+</div><div class="era-stat-label">Tech Layoffs</div></div>
+      </div>
+    </div>
+    <div class="era-card wave-2" data-wave="1">
+      <div class="era-phase">Wave 2</div>
+      <div class="era-title">The Agentic Builder Era</div>
+      <div class="era-period">Mid 2023 &mdash; Early 2025</div>
+      <div class="era-desc">Copilot hits 1.8M users, Devin goes viral, bootcamps close. Junior devs displaced; seniors hired to review AI code. Goldman flags "$600B revenue gap."</div>
+      <div class="era-stats">
+        <div class="era-stat"><div class="era-stat-value">-40%</div><div class="era-stat-label">Junior Roles</div></div>
+        <div class="era-stat"><div class="era-stat-value">$600B</div><div class="era-stat-label">AI Rev. Gap</div></div>
+      </div>
+    </div>
+    <div class="era-card wave-3" data-wave="2">
+      <div class="era-phase">Wave 3</div>
+      <div class="era-title">The Claude Code Revolution</div>
+      <div class="era-period">Late 2025 &mdash; Early 2027</div>
+      <div class="era-desc">Claude Code, Codex, Gemini CLI go agentic. Salesforce cuts 1K+, IBM cuts thousands, Amazon slashes 16K corporate roles. Mid-tier engineers displaced. Cracks appear: AI code debt, security gaps. The bubble deflates.</div>
+      <div class="era-stats">
+        <div class="era-stat"><div class="era-stat-value">-60%</div><div class="era-stat-label">Mid-Tier Jobs</div></div>
+        <div class="era-stat"><div class="era-stat-value">2-3x</div><div class="era-stat-label">Top Eng Pay</div></div>
+      </div>
+    </div>
+    <div class="era-card wave-4" data-wave="3">
+      <div class="era-phase">Wave 4 &mdash; Recovery</div>
+      <div class="era-title">The Super Team Equilibrium</div>
+      <div class="era-period">2028 &mdash; 2029+</div>
+      <div class="era-desc">After the correction, the Super Team model matures: ~6 specialists (fullstack, security, ML, systems, maintainers) + AI agents. Sustainable productivity, stable market.</div>
+      <div class="era-stats">
+        <div class="era-stat"><div class="era-stat-value">~6</div><div class="era-stat-label">Team Size</div></div>
+        <div class="era-stat"><div class="era-stat-value">10x</div><div class="era-stat-label">Sustainable</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DK Journey -->
+  <div class="dk-section">
+    <div class="dk-title">The Dunning-Kruger Journey of AI Adoption</div>
+    <div class="dk-subtitle">How global market confidence overshoots, crashes, and stabilizes &mdash; the classic pattern playing out in real time</div>
+    <div class="dk-flow">
+      <div class="dk-node node-rise">
+        <div class="dk-node-phase">2022-2025</div>
+        <div class="dk-node-title">Rise of Hype</div>
+        <div class="dk-node-team">50+ &rarr; 12</div>
+        <div class="dk-node-desc">Teams slashed aggressively. "AI replaces everyone" narrative peaks. Overconfidence drives reckless adoption.</div>
+      </div>
+      <div class="dk-arrow">&rarr;</div>
+      <div class="dk-node node-peak">
+        <div class="dk-node-phase">Peak: 2025</div>
+        <div class="dk-node-title">Mount Stupid</div>
+        <div class="dk-node-team">4-8</div>
+        <div class="dk-node-desc">Maximum overconfidence. Skeleton crews + AI. "We don't need engineers." Move fast, break everything.</div>
+        <div class="dk-node-tags">
+          <span class="dk-tag">Over-cuts</span>
+          <span class="dk-tag">AI slop</span>
+          <span class="dk-tag">Tech debt</span>
+        </div>
+      </div>
+      <div class="dk-arrow">&rarr;</div>
+      <div class="dk-node node-valley">
+        <div class="dk-node-phase">2026-2027</div>
+        <div class="dk-node-title">Valley of Despair</div>
+        <div class="dk-node-team">Re-hire to 15+</div>
+        <div class="dk-node-desc">Reality crashes in. AI-generated bugs, security breaches, outages. Companies scramble to re-hire. AI bubble deflates. Startups fail.</div>
+        <div class="dk-node-tags">
+          <span class="dk-tag">Re-hiring</span>
+          <span class="dk-tag">Bubble burst</span>
+          <span class="dk-tag">Quality crisis</span>
+        </div>
+      </div>
+      <div class="dk-arrow">&rarr;</div>
+      <div class="dk-node node-slope">
+        <div class="dk-node-phase">2027-2028</div>
+        <div class="dk-node-title">Slope of Enlightenment</div>
+        <div class="dk-node-team">8-10</div>
+        <div class="dk-node-desc">Understanding what AI does well vs. what needs humans. Quality frameworks emerge. AI-human collaboration matures.</div>
+      </div>
+      <div class="dk-arrow">&rarr;</div>
+      <div class="dk-node node-plateau">
+        <div class="dk-node-phase">2029+</div>
+        <div class="dk-node-title">Plateau of Productivity</div>
+        <div class="dk-node-team">~6</div>
+        <div class="dk-node-desc">Stable Super Team model. Fullstack, Security, ML, Systems, Maintainers + AI. Sustainable, proven, productive.</div>
+        <div class="dk-node-tags">
+          <span class="dk-tag">Fullstack</span>
+          <span class="dk-tag">Security</span>
+          <span class="dk-tag">ML</span>
+          <span class="dk-tag">Systems</span>
+          <span class="dk-tag">Maintainers</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Author Attribution -->
+  <div class="author-footer">
+    <div class="author-top">
+      <div>
+        <div class="author-label">Prediction &amp; Analysis by</div>
+        <div class="author-name"><span>Sparsh Gupta</span></div>
+        <div class="author-title">Product Manager @Grant Thornton&bull; AI Strategist &bull; Co-Founder, EonLex Technologies</div>
+      </div>
+      <div class="author-label" style="text-align:right;">Feb 2026</div>
+    </div>
+    <div class="author-credentials">
+      <div class="author-cred"><strong>Grant Thornton</strong> &mdash; PM, AI-driven Audit Transformation</div>
+      <div class="author-cred"><strong>EonLex Technologies</strong> &mdash; Co-Founder, GenAI + Legal Tech</div>
+      <div class="author-cred"><strong>Northvolt AB</strong> &mdash; Gen AI Procurement &amp; Supply Chain</div>
+      <div class="author-cred"><strong>GreyB Services</strong> &mdash; Patent Analytics &amp; IP Strategy</div>
+      <div class="author-cred"><strong>Kyushu University</strong> &mdash; AI/ML Research</div>
+    </div>
+    <div class="author-note">5+ years across AI product management, generative AI implementation, and innovation strategy. This prediction model draws on firsthand experience building and deploying AI-driven products across audit, legal tech, procurement, and IP &mdash; observing how organizations adopt, over-correct, and eventually stabilize around new technology paradigms.</div>
+    <div class="author-copyright">&copy; 2026 Sparsh Gupta. All rights reserved. Data sourced from public reports, earnings calls, and industry trackers.</div>
+  </div>
+</div>
+
+<script>
+// ============ CONSTANTS ============
+const YEAR_START = 2022.5;
+const YEAR_END = 2029.5;
+const CURRENT_YEAR = 2026.1;
+const PREDICTION_START = 2025.8;
+const STABILIZATION_START = 2028.5;
+
+// ============ DUNNING-KRUGER COMPOSITE CURVE ============
+const DK_POINTS = [
+  { year: 2022.5, value: 0.03 },
+  { year: 2023.0, value: 0.18 },
+  { year: 2023.4, value: 0.34 },
+  { year: 2023.8, value: 0.48 },
+  { year: 2024.2, value: 0.62 },
+  { year: 2024.6, value: 0.76 },
+  { year: 2025.0, value: 0.88 },   // PEAK OF MOUNT STUPID
+  { year: 2025.3, value: 0.86 },
+  { year: 2025.7, value: 0.72 },
+  { year: 2026.0, value: 0.55 },
+  { year: 2026.4, value: 0.40 },
+  { year: 2026.8, value: 0.30 },
+  { year: 2027.1, value: 0.25 },   // VALLEY OF DESPAIR
+  { year: 2027.4, value: 0.27 },
+  { year: 2027.7, value: 0.34 },
+  { year: 2028.0, value: 0.44 },
+  { year: 2028.3, value: 0.52 },
+  { year: 2028.6, value: 0.58 },
+  { year: 2029.0, value: 0.64 },   // PLATEAU OF PRODUCTIVITY
+  { year: 2029.3, value: 0.66 },
+  { year: 2029.5, value: 0.67 },
+];
+
+// DK Phase definitions
+const DK_PHASES = [
+  { start: 2022.5, end: 2024.8, label: 'Rise of Hype', color: 'rgba(168,85,247,0.04)', textColor: 'rgba(168,85,247,0.5)' },
+  { start: 2024.8, end: 2025.6, label: 'Peak of Mount Stupid', color: 'rgba(239,68,68,0.06)', textColor: 'rgba(239,68,68,0.6)' },
+  { start: 2025.6, end: 2027.3, label: 'Valley of Despair', color: 'rgba(59,130,246,0.04)', textColor: 'rgba(59,130,246,0.5)' },
+  { start: 2027.3, end: 2028.5, label: 'Slope of Enlightenment', color: 'rgba(34,197,94,0.04)', textColor: 'rgba(34,197,94,0.5)' },
+  { start: 2028.5, end: 2029.5, label: 'Plateau of Productivity', color: 'rgba(245,158,11,0.05)', textColor: 'rgba(245,158,11,0.55)' },
+];
+
+// DK line events (plotted ON the composite curve)
+const DK_EVENTS = [
+  { year: 2023.3,  label: '2023: Record 260K+ tech layoffs', labelPos: 'above', desc: 'The biggest year for tech layoffs in recorded history. Twitter/X, Meta, Google, Microsoft, Amazon all slash headcounts. Over-hiring meets AI pivot — companies frame cuts as "rebalancing to focus on AI."', source: 'Layoffs.fyi / TrueUp trackers, 2023' },
+  { year: 2024.5,  label: 'Goldman: "$600B AI gap"', labelPos: 'below', desc: 'Goldman Sachs analyst Jim Covello questions whether AI spending will ever deliver returns. Sequoia flags a "$600B revenue gap" between AI infrastructure costs and actual revenue.', source: 'Goldman Sachs / Sequoia, Jun 2024' },
+  { year: 2025.0,  label: 'PEAK HYPE', labelPos: 'above', desc: 'Maximum market overconfidence. Every company claims to be "AI-first." Salesforce CEO declares no more SWE hiring. The narrative: AI will replace all developers within 2 years.', source: 'Various, early 2025' },
+  { year: 2025.5,  label: 'Gartner: "Peak of Inflated Expectations"', labelPos: 'below', desc: 'Gartner Hype Cycle places Generative AI squarely at the "Peak of Inflated Expectations," warning the Trough of Disillusionment is imminent.', source: 'Gartner Hype Cycle, 2025' },
+  { year: 2026.0,  label: 'AI code quality crisis', labelPos: 'above', desc: 'Reports surface of massive technical debt from unchecked AI-generated code. Security vulnerabilities in AI code lead to breaches. Companies realize "move fast" broke too many things.', source: 'Predicted, 2026' },
+  { year: 2026.5,  label: 'AI startup failures surge', labelPos: 'below', desc: 'Over-funded AI startups begin failing. VC pullback accelerates. The gap between AI promises and AI delivery becomes undeniable. Dot-com parallels intensify.', source: 'Predicted, 2026' },
+  { year: 2027.1,  label: 'VALLEY BOTTOM: Re-hiring wave', labelPos: 'above', desc: 'Companies that over-cut scramble to re-hire. "We need humans who understand the code AI wrote." Experienced engineers command premium. Market hits bottom.', source: 'Predicted, 2027' },
+  { year: 2027.7,  label: 'AI-human frameworks emerge', labelPos: 'below', desc: 'Industry develops mature frameworks for AI-human collaboration. Best practices for AI code review, testing, and quality assurance become standard.', source: 'Predicted, 2027' },
+  { year: 2028.3,  label: 'Super Team model validated', labelPos: 'above', desc: 'Multiple orgs demonstrate that the ~6-person Super Team + AI agents model delivers sustainable 10x productivity without quality degradation.', source: 'Predicted, 2028' },
+  { year: 2029.0,  label: 'EQUILIBRIUM REACHED', labelPos: 'below', desc: 'Market stabilizes. New education pipelines, new roles, sustainable team models. AI is a tool, not a replacement. The Dunning-Kruger cycle completes.', source: 'Predicted, 2029' },
+];
+
+// ============ 4 DISRUPTION WAVES ============
+const WAVES = [
+  {
+    name: 'The ChatGPT Earthquake', shortName: 'ChatGPT Effect',
+    color: '#ef4444', colorRGB: [239, 68, 68],
+    center: 2023.4, sigma: 0.45, amplitude: 0.45, startYear: 2022.8,
+    events: [
+      { year: 2022.84, label: 'Twitter/X: 50% workforce cut', major: true, labelPos: 'above', desc: 'Elon Musk\'s Twitter takeover triggers immediate mass layoffs — ~50% of workforce cut in days. Thousands affected across engineering, trust & safety, and comms.', source: 'Multiple outlets, Nov 4-9 2022' },
+      { year: 2022.917, label: 'ChatGPT Launches', major: true, labelPos: 'below', desc: 'OpenAI releases ChatGPT. Reaches 100M users in 2 months, the fastest-growing app in history.', source: 'Reuters, Feb 2023' },
+      { year: 2023.0, label: 'Meta cuts 11,000', major: false, labelPos: 'above', desc: 'Meta lays off ~11,000 (~13% of workforce) as ad growth slows and Reality Labs spending is rebalanced. Begins "Year of Efficiency."', source: 'Meta Platforms, Nov 9 2022' },
+      { year: 2023.04, label: 'Google cuts 12,000', major: false, labelPos: 'below', desc: 'Google lays off ~12,000 (~6% of global headcount). Sundar Pichai cites over-hiring during pandemic growth. Refocuses entirely on AI.', source: 'Google blog, Jan 2023' },
+      { year: 2023.08, label: 'Microsoft cuts 10,000', major: false, labelPos: 'above', desc: 'Microsoft lays off 10,000 while investing $10B into OpenAI. Management cites macroeconomic slowdown and customer spending reductions.', source: 'Microsoft, Jan 2023' },
+      { year: 2023.17, label: 'Amazon cuts 18,000+', major: false, labelPos: 'below', desc: 'Amazon cuts 18,000+ in early 2023 rounds, with further rounds through the year totaling over 27,000. Repeatedly restructures corporate roles.', source: 'Amazon, Jan-Mar 2023' },
+      { year: 2023.25, label: 'SO traffic -50%', major: true, labelPos: 'above', desc: 'Stack Overflow traffic drops ~50%. Developers shift to ChatGPT/Claude for coding questions.', source: 'SimilarWeb, 2023' },
+      { year: 2023.33, label: 'IBM: AI replaces 7,800', major: false, labelPos: 'below', desc: 'IBM CEO pauses hiring for ~7,800 roles that could be replaced by AI over 5 years.', source: 'Bloomberg, May 2023' },
+      { year: 2023.42, label: 'Chegg stock -48%', major: true, labelPos: 'above', desc: 'Chegg crashes 48% in one day. CEO admits ChatGPT is crushing new customer growth.', source: 'Chegg earnings, May 2023' },
+    ]
+  },
+  {
+    name: 'The Agentic Builder Era', shortName: 'Agentic Builders',
+    color: '#06b6d4', colorRGB: [6, 182, 212],
+    center: 2024.3, sigma: 0.55, amplitude: 0.62, startYear: 2023.4,
+    events: [
+      { year: 2023.5, label: 'Copilot: 1M+ users', major: true, labelPos: 'below', desc: 'GitHub Copilot surpasses 1M paid subscribers and 37K enterprise orgs.', source: 'GitHub, Jul 2023' },
+      { year: 2023.625, label: 'Dropbox cuts 16%', major: false, labelPos: 'above', desc: 'Dropbox cuts 500 (16%). CEO: "the AI era requires a different mix of skills."', source: 'Dropbox, Apr 2023' },
+      { year: 2023.75, label: 'SO lays off 28%', major: true, labelPos: 'below', desc: 'Stack Overflow lays off 28% of staff. The once-indispensable platform fades.', source: 'The Verge, Oct 2023' },
+      { year: 2023.917, label: 'Cursor AI goes viral', major: false, labelPos: 'above', desc: 'Cursor AI IDE gains explosive traction. AI-native editors challenge VS Code.', source: 'TechCrunch, 2023' },
+      { year: 2024.17, label: 'Devin AI announced', major: true, labelPos: 'above', desc: 'Cognition Labs unveils Devin as "the first AI software engineer." Industry panics.', source: 'Cognition Labs, Mar 2024' },
+      { year: 2024.33, label: 'Klarna: AI does 700 jobs', major: false, labelPos: 'below', desc: 'Klarna CEO claims AI is doing the work of 700 employees. Becomes a poster child for AI replacement.', source: 'Klarna, 2024' },
+      { year: 2024.5, label: 'Bootcamps collapsing', major: true, labelPos: 'above', desc: 'Coding bootcamps shut down en masse. "Learn to code" narrative shifts to "learn to prompt."', source: 'Various, 2024' },
+      { year: 2024.67, label: 'Intel cuts 15,000', major: false, labelPos: 'below', desc: 'Intel cuts 15,000+ (15% of workforce) in $10B cost reduction. Pivots to AI.', source: 'Intel, Aug 2024' },
+      { year: 2024.83, label: 'Junior dev freeze -40%', major: true, labelPos: 'above', desc: 'Junior developer postings drop 40%+. Companies prefer seniors who can guide AI agents.', source: 'LinkedIn data, 2024' },
+    ]
+  },
+  {
+    name: 'The Claude Code Revolution', shortName: 'Claude Code Era',
+    color: '#a855f7', colorRGB: [168, 85, 247],
+    center: 2026.0, sigma: 0.42, amplitude: 0.82, startYear: 2025.0,
+    events: [
+      { year: 2025.08, label: 'Salesforce: no SWE hiring', major: false, labelPos: 'below', desc: 'Salesforce cuts 1,000+ roles in early 2025. CEO Marc Benioff declares no more SWE hiring, citing AI productivity. Later confirms AI reducing customer-support headcount significantly.', source: 'Salesforce/Benioff, Jan 2025' },
+      { year: 2025.17, label: 'Claude Code GA', major: true, labelPos: 'above', desc: 'Claude Code reaches GA. Handles complex multi-file refactoring, bug fixing, and feature dev autonomously.', source: 'Anthropic, Mar 2025' },
+      { year: 2025.33, label: 'OpenAI Codex agent', major: true, labelPos: 'below', desc: 'OpenAI launches Codex as an autonomous cloud coding agent. The AI coding agent war begins.', source: 'OpenAI, May 2025' },
+      { year: 2025.42, label: 'Gemini CLI launches', major: false, labelPos: 'above', desc: 'Google releases Gemini CLI, open-source. Three-way fight: Anthropic vs OpenAI vs Google.', source: 'Google, Jun 2025' },
+      { year: 2025.75, label: 'IBM cuts thousands', major: false, labelPos: 'below', desc: 'IBM announces cuts of thousands (low single-digit % of workforce) as it refocuses on software and AI. Part of industry-wide "rebalance to AI" wave.', source: 'Reuters/Bloomberg, Nov 2025' },
+      { year: 2025.92, label: 'Mid-tier displacement', major: true, labelPos: 'above', desc: 'Mid-level SWE roles decline 30-60%. AI handles 3-5yr experience tasks. Top engineers hit $500K+.', source: 'Levels.fyi, 2025-26' },
+      { year: 2026.08, label: 'Amazon: 16K corporate cuts', major: true, labelPos: 'below', desc: 'Amazon announces ~16,000 corporate role cuts in Jan 2026, following Oct 2025 rounds. Largest new wave since 2023. Office-level reductions across California reported.', source: 'Multiple outlets, Jan-Feb 2026' },
+      { year: 2026.25, label: 'AI code debt crisis', major: true, labelPos: 'above', desc: 'Reports of massive technical debt from unchecked AI code. Security vulnerabilities surface. "Move fast, break things" backlash begins.', source: 'Various, 2026' },
+      { year: 2026.5, label: 'Mid-tier roles -60%', major: true, labelPos: 'below', desc: 'Peak displacement: mid-level roles drop 60% from 2024. But quality complaints surge in parallel.', source: 'LinkedIn Report, 2026' },
+    ]
+  },
+  {
+    name: 'The Super Team Equilibrium', shortName: 'Super Teams',
+    color: '#f59e0b', colorRGB: [245, 158, 11],
+    center: 2028.5, sigma: 0.65, amplitude: 0.75, startYear: 2027.5,
+    events: [
+      { year: 2027.75, label: 'AI-human collab matures', major: false, labelPos: 'above', desc: 'Prediction: Industry develops robust frameworks for AI-human pair programming, code review, and quality assurance.', source: 'Predicted' },
+      { year: 2028.17, label: 'Super Team pilots work', major: true, labelPos: 'below', desc: 'Prediction: Early Super Team adopters demonstrate sustainable 10x productivity. Model validated across industries.', source: 'Predicted' },
+      { year: 2028.5, label: 'Enterprise adoption', major: true, labelPos: 'above', desc: 'Prediction: Fortune 500s adopt Super Team model. ~6 specialists: fullstack, security, ML, systems, maintainers + AI agents.', source: 'Predicted' },
+      { year: 2029.0, label: 'Market equilibrium', major: true, labelPos: 'below', desc: 'Prediction: Stable new normal. AI tools mature, education pipelines adapt, sustainable team models proven. The DK cycle completes.', source: 'Predicted' },
+    ]
+  }
+];
+
+// ============ CANVAS SETUP ============
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+const wrapper = document.getElementById('chartWrapper');
+const tooltip = document.getElementById('tooltip');
+const tooltipYear = document.getElementById('tooltipYear');
+const tooltipItems = document.getElementById('tooltipItems');
+const tooltipDK = document.getElementById('tooltipDK');
+const tooltipDKPhase = document.getElementById('tooltipDKPhase');
+const eventPopup = document.getElementById('eventPopup');
+
+let W, H;
+const PADDING = { top: 70, right: 30, bottom: 55, left: 65 };
+let dpr = window.devicePixelRatio || 1;
+
+function resize() {
+  const rect = wrapper.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+// ============ MATH ============
+function gaussian(x, c, s) { const d = (x - c) / s; return Math.exp(-0.5 * d * d); }
+function waveValue(w, yr) {
+  if (yr < w.startYear) return 0;
+  const s = yr < w.center ? w.sigma * 0.8 : w.sigma * 1.3;
+  return w.amplitude * gaussian(yr, w.center, s);
+}
+function yearToX(yr) { return PADDING.left + ((yr - YEAR_START) / (YEAR_END - YEAR_START)) * (W - PADDING.left - PADDING.right); }
+function valToY(v) { return PADDING.top + (H - PADDING.top - PADDING.bottom) * (1 - v); }
+function xToYear(x) { return YEAR_START + ((x - PADDING.left) / (W - PADDING.left - PADDING.right)) * (YEAR_END - YEAR_START); }
+
+// Catmull-Rom spline interpolation for DK curve
+function catmullRom(t, p0, p1, p2, p3) {
+  const t2 = t*t, t3 = t2*t;
+  return 0.5*((2*p1)+(-p0+p2)*t+(2*p0-5*p1+4*p2-p3)*t2+(-p0+3*p1-3*p2+p3)*t3);
+}
+function dkValue(year) {
+  const pts = DK_POINTS;
+  if (year <= pts[0].year) return pts[0].value;
+  if (year >= pts[pts.length-1].year) return pts[pts.length-1].value;
+  let i = 0;
+  while (i < pts.length - 1 && pts[i+1].year <= year) i++;
+  if (i >= pts.length - 1) return pts[pts.length-1].value;
+  const t = (year - pts[i].year) / (pts[i+1].year - pts[i].year);
+  const p0 = (i > 0 ? pts[i-1].value : 2*pts[i].value - pts[i+1].value);
+  const p1 = pts[i].value;
+  const p2 = pts[i+1].value;
+  const p3 = (i+2 < pts.length ? pts[i+2].value : 2*pts[i+1].value - pts[i].value);
+  return Math.max(0, Math.min(1, catmullRom(t, p0, p1, p2, p3)));
+}
+function getDKPhase(year) {
+  for (const p of DK_PHASES) { if (year >= p.start && year < p.end) return p; }
+  return DK_PHASES[DK_PHASES.length - 1];
+}
+
+// ============ STATE ============
+let animProgress = 0, isPlaying = false, playSpeed = 1, lastTime = 0;
+let hoveredYear = null, highlightWave = -1, hoveredEvent = null, pulsePhase = 0;
+
+// ============ DRAWING ============
+function drawDKPhaseZones() {
+  for (const phase of DK_PHASES) {
+    const x1 = yearToX(phase.start), x2 = yearToX(phase.end);
+    ctx.fillStyle = phase.color;
+    ctx.fillRect(x1, PADDING.top, x2 - x1, H - PADDING.top - PADDING.bottom);
+    // Phase label at top
+    ctx.font = '600 9px "JetBrains Mono", monospace';
+    ctx.fillStyle = phase.textColor;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    const cx = (x1 + x2) / 2;
+    ctx.fillText(phase.label, cx, PADDING.top + 4);
+  }
+}
+
+function drawGrid() {
+  ctx.strokeStyle = 'rgba(148,163,184,0.05)';
+  ctx.lineWidth = 1;
+  for (let v = 0; v <= 1; v += 0.2) { const y = valToY(v); ctx.beginPath(); ctx.moveTo(PADDING.left, y); ctx.lineTo(W - PADDING.right, y); ctx.stroke(); }
+  for (let yr = 2023; yr <= 2029; yr++) { const x = yearToX(yr); ctx.beginPath(); ctx.moveTo(x, PADDING.top); ctx.lineTo(x, H - PADDING.bottom); ctx.stroke(); }
+  // Y labels
+  ctx.font = '11px "JetBrains Mono", monospace'; ctx.fillStyle = 'rgba(148,163,184,0.35)';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ['None','Low','Medium','High','Critical','Max'].forEach((l,i) => ctx.fillText(l, PADDING.left-10, valToY(i/5)));
+  ctx.save(); ctx.translate(14, H/2); ctx.rotate(-Math.PI/2);
+  ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(148,163,184,0.25)'; ctx.font = '11px "Inter",sans-serif';
+  ctx.fillText('Disruption Impact / Market Confidence', 0, 0); ctx.restore();
+  // X labels
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillStyle = 'rgba(148,163,184,0.4)';
+  ctx.font = '12px "JetBrains Mono", monospace';
+  for (let yr = 2023; yr <= 2029; yr++) ctx.fillText(yr+'', yearToX(yr), H-PADDING.bottom+12);
+}
+
+function drawPredictionZones() {
+  // Prediction zone
+  const px = yearToX(PREDICTION_START), pEnd = yearToX(STABILIZATION_START);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(168,85,247,0.2)'; ctx.lineWidth = 1; ctx.setLineDash([6,4]);
+  ctx.beginPath(); ctx.moveTo(px, PADDING.top); ctx.lineTo(px, H-PADDING.bottom); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.font = '10px "JetBrains Mono", monospace'; ctx.fillStyle = 'rgba(168,85,247,0.4)';
+  ctx.textAlign = 'left'; ctx.fillText('PREDICTED', px+6, H-PADDING.bottom-14);
+  // Stabilization zone
+  const sx = yearToX(STABILIZATION_START), sEnd = W - PADDING.right;
+  ctx.fillStyle = 'rgba(245,158,11,0.03)';
+  ctx.fillRect(sx, PADDING.top, sEnd-sx, H-PADDING.top-PADDING.bottom);
+  ctx.strokeStyle = 'rgba(245,158,11,0.2)'; ctx.setLineDash([6,4]);
+  ctx.beginPath(); ctx.moveTo(sx, PADDING.top); ctx.lineTo(sx, H-PADDING.bottom); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(245,158,11,0.45)';
+  ctx.fillText('STABILIZATION', sx+6, H-PADDING.bottom-14);
+  ctx.restore();
+}
+
+function drawCurrentYearLine() {
+  const x = yearToX(CURRENT_YEAR);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(34,211,238,0.45)'; ctx.lineWidth = 1.5; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(x, PADDING.top); ctx.lineTo(x, H-PADDING.bottom); ctx.stroke(); ctx.setLineDash([]);
+  const bw = 72, bh = 18, bx = x-bw/2, by = PADDING.top-24;
+  ctx.fillStyle = 'rgba(34,211,238,0.1)'; ctx.strokeStyle = 'rgba(34,211,238,0.35)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.roundRect(bx,by,bw,bh,4); ctx.fill(); ctx.stroke();
+  ctx.font = '600 9px "JetBrains Mono",monospace'; ctx.fillStyle = '#22d3ee';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('NOW  2026', x, by+bh/2);
+  ctx.restore();
+}
+
+function drawWave(wave, idx, cutoff) {
+  const steps = 500, stepSz = (YEAR_END-YEAR_START)/steps;
+  const isHL = highlightWave===idx, isDim = highlightWave>=0 && highlightWave!==idx;
+  const bA = isDim?0.1:1, lA = isDim?0.12:(isHL?1:0.8);
+  const pts = [];
+  for (let i=0;i<=steps;i++) {
+    const yr = YEAR_START+i*stepSz; if(yr>cutoff) break;
+    const v = waveValue(wave,yr);
+    if(v>0.001||pts.length>0) pts.push({x:yearToX(yr),y:valToY(v),year:yr,val:v});
+  }
+  if(pts.length<2) return;
+  const [r,g,b] = wave.colorRGB;
+  // Fill
+  const grad = ctx.createLinearGradient(0,valToY(wave.amplitude),0,valToY(0));
+  grad.addColorStop(0,`rgba(${r},${g},${b},${0.2*bA})`); grad.addColorStop(1,`rgba(${r},${g},${b},${0.01*bA})`);
+  ctx.beginPath(); ctx.moveTo(pts[0].x,valToY(0));
+  for(const p of pts) ctx.lineTo(p.x,p.y);
+  ctx.lineTo(pts[pts.length-1].x,valToY(0)); ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
+  // Line
+  ctx.beginPath(); pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+  ctx.strokeStyle=wave.color; ctx.globalAlpha=lA; ctx.lineWidth=isHL?3.5:2; ctx.lineJoin='round'; ctx.stroke();
+  if(!isDim){ctx.globalAlpha=0.1*bA;ctx.lineWidth=isHL?12:7;ctx.stroke();}
+  ctx.globalAlpha=1;
+  // Events
+  if(!isDim) drawWaveEvts(wave,idx,cutoff);
+}
+
+function drawWaveEvts(wave, wIdx, cutoff) {
+  const [r,g,b]=wave.colorRGB;
+  for(let ei=0;ei<wave.events.length;ei++){
+    const e=wave.events[ei]; if(e.year>cutoff)continue;
+    const ex=yearToX(e.year), ey=valToY(waveValue(wave,e.year));
+    const isH = hoveredEvent&&hoveredEvent.wIdx===wIdx&&hoveredEvent.eIdx===ei;
+    const isPred = e.source&&e.source.includes('Predicted');
+    const sz = (e.major?4.5:3)+(isH?2:0);
+    if(e.major&&!isH){
+      const ps=sz+3+Math.sin(pulsePhase+ei*1.7)*2.5;
+      ctx.beginPath();ctx.arc(ex,ey,ps,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(${r},${g},${b},${0.12+Math.sin(pulsePhase+ei)*0.06})`;ctx.lineWidth=1;ctx.stroke();
+    }
+    ctx.beginPath();ctx.arc(ex,ey,sz+2.5,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(${r},${g},${b},${isH?0.5:0.2})`;ctx.lineWidth=isH?1.5:0.8;ctx.stroke();
+    if(isPred){ctx.beginPath();ctx.moveTo(ex,ey-sz);ctx.lineTo(ex+sz,ey);ctx.lineTo(ex,ey+sz);ctx.lineTo(ex-sz,ey);ctx.closePath();}
+    else{ctx.beginPath();ctx.arc(ex,ey,sz,0,Math.PI*2);}
+    ctx.fillStyle=isH?'#fff':wave.color;ctx.fill();
+    if(e.major||isH||highlightWave===wIdx){
+      const above=e.labelPos==='above', off=above?-20:20;
+      ctx.font=`${isH?'600':'400'} ${isH?'10':'9'}px "Inter",sans-serif`;
+      const tw=ctx.measureText(e.label).width, lx=ex, ly=ey+off;
+      ctx.fillStyle=`rgba(${r},${g},${b},${isH?0.15:0.06})`;
+      ctx.beginPath();ctx.roundRect(lx-tw/2-5,ly-7,tw+10,14,3);ctx.fill();
+      ctx.fillStyle=isH?'#fff':`rgba(${r},${g},${b},0.85)`;
+      ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(e.label,lx,ly);
+    }
+  }
+}
+
+function drawDKComposite(cutoff) {
+  const steps = 600, stepSz = (YEAR_END-YEAR_START)/steps;
+  const pts = [];
+  for(let i=0;i<=steps;i++){
+    const yr=YEAR_START+i*stepSz; if(yr>cutoff)break;
+    const v=dkValue(yr);
+    pts.push({x:yearToX(yr),y:valToY(v),year:yr,val:v});
+  }
+  if(pts.length<2)return;
+  // Gradient fill under DK curve - green above valley, red below peak
+  const grad = ctx.createLinearGradient(0, valToY(0.9), 0, valToY(0));
+  grad.addColorStop(0, 'rgba(240,240,240,0.08)');
+  grad.addColorStop(0.5, 'rgba(240,240,240,0.03)');
+  grad.addColorStop(1, 'rgba(240,240,240,0.005)');
+  ctx.beginPath(); ctx.moveTo(pts[0].x, valToY(0));
+  for(const p of pts) ctx.lineTo(p.x, p.y);
+  ctx.lineTo(pts[pts.length-1].x, valToY(0)); ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+
+  // Main DK line
+  ctx.beginPath(); pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+  ctx.strokeStyle = '#e8e8e8'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
+  ctx.setLineDash([]); ctx.globalAlpha = 0.9; ctx.stroke();
+  // Glow
+  ctx.globalAlpha = 0.12; ctx.lineWidth = 14; ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // Colored segments overlay
+  for(const phase of DK_PHASES){
+    const segPts = pts.filter(p=>p.year>=phase.start&&p.year<=phase.end);
+    if(segPts.length<2) continue;
+    ctx.beginPath(); segPts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+    ctx.strokeStyle = phase.textColor.replace(/[\d.]+\)$/,'0.7)');
+    ctx.lineWidth = 3; ctx.stroke();
+  }
+
+  // DK events
+  const isDKHL = highlightWave === -2; // special highlight for DK line
+  for(let i=0;i<DK_EVENTS.length;i++){
+    const evt = DK_EVENTS[i]; if(evt.year>cutoff)continue;
+    const ex=yearToX(evt.year), ey=valToY(dkValue(evt.year));
+    const isH = hoveredEvent&&hoveredEvent.wIdx===-1&&hoveredEvent.eIdx===i;
+    const sz = isH ? 7 : 5;
+    // Diamond marker
+    ctx.beginPath();ctx.moveTo(ex,ey-sz);ctx.lineTo(ex+sz,ey);ctx.lineTo(ex,ey+sz);ctx.lineTo(ex-sz,ey);ctx.closePath();
+    const phase = getDKPhase(evt.year);
+    ctx.fillStyle = isH ? '#fff' : phase.textColor.replace(/[\d.]+\)$/,'0.9)');
+    ctx.fill();
+    ctx.strokeStyle = isH ? '#fff' : 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1.5; ctx.stroke();
+    if(isH){ctx.beginPath();ctx.arc(ex,ey,sz+6,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.08)';ctx.fill();}
+    // Label
+    const above=evt.labelPos==='above', off=above?-20:20;
+    ctx.font=`${isH?'600':'500'} ${isH?'10':'9'}px "Inter",sans-serif`;
+    const tw=ctx.measureText(evt.label).width;
+    ctx.fillStyle=isH?'rgba(255,255,255,0.15)':'rgba(255,255,255,0.05)';
+    ctx.beginPath();ctx.roundRect(ex-tw/2-5,ey+off-7,tw+10,14,3);ctx.fill();
+    ctx.fillStyle=isH?'#fff':phase.textColor.replace(/[\d.]+\)$/,'0.8)');
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(evt.label,ex,ey+off);
+  }
+}
+
+function drawLegend() {
+  let x=PADDING.left+10, y=PADDING.top+22;
+  // DK composite first
+  ctx.globalAlpha = highlightWave>=0 ? 0.3 : 1;
+  ctx.strokeStyle='#e8e8e8'; ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+20,y);ctx.stroke();
+  ctx.font='500 10px "Inter",sans-serif'; ctx.fillStyle='rgba(232,232,232,0.8)';
+  ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText('Market Confidence (DK)',x+28,y);
+  y+=20;
+  for(let i=0;i<WAVES.length;i++){
+    const w=WAVES[i], isA=highlightWave===i;
+    ctx.globalAlpha=(highlightWave>=0&&!isA)?0.25:1;
+    ctx.fillStyle=w.color;ctx.fillRect(x,y-1,20,3);
+    ctx.font=`${isA?'600':'400'} 10px "Inter",sans-serif`;
+    ctx.fillStyle=isA?w.color:'rgba(226,232,240,0.6)';
+    ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(w.shortName,x+28,y);
+    y+=18;
+  }
+  ctx.globalAlpha=1;
+}
+
+function drawHoverCross() {
+  if(!hoveredYear)return;
+  const x=yearToX(hoveredYear);
+  ctx.save();ctx.strokeStyle='rgba(226,232,240,0.1)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+  ctx.beginPath();ctx.moveTo(x,PADDING.top);ctx.lineTo(x,H-PADDING.bottom);ctx.stroke();ctx.setLineDash([]);
+  for(let i=0;i<WAVES.length;i++){
+    const v=waveValue(WAVES[i],hoveredYear); if(v<0.005)continue;
+    const y=valToY(v);
+    ctx.beginPath();ctx.arc(x,y,3.5,0,Math.PI*2);ctx.fillStyle=WAVES[i].color;ctx.fill();
+    ctx.beginPath();ctx.arc(x,y,6,0,Math.PI*2);ctx.strokeStyle=WAVES[i].color;ctx.lineWidth=1;ctx.globalAlpha=0.35;ctx.stroke();ctx.globalAlpha=1;
+  }
+  // DK dot
+  const dv=dkValue(hoveredYear), dy=valToY(dv);
+  ctx.beginPath();ctx.arc(x,dy,4,0,Math.PI*2);ctx.fillStyle='#e8e8e8';ctx.fill();
+  ctx.beginPath();ctx.arc(x,dy,7,0,Math.PI*2);ctx.strokeStyle='rgba(232,232,232,0.3)';ctx.lineWidth=1;ctx.stroke();
+  ctx.restore();
+}
+
+function render() {
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='rgba(17,24,39,0.5)';ctx.fillRect(0,0,W,H);
+  drawDKPhaseZones();
+  drawGrid();
+  drawPredictionZones();
+  drawCurrentYearLine();
+  const cutoff = YEAR_START + animProgress*(YEAR_END-YEAR_START);
+  for(let i=0;i<WAVES.length;i++) drawWave(WAVES[i],i,cutoff);
+  drawDKComposite(cutoff);
+  drawHoverCross();
+  drawLegend();
+  document.getElementById('timelineSlider').value = animProgress*1000;
+}
+
+function animate(time) {
+  if(isPlaying){
+    const dt=lastTime?(time-lastTime)/1000:0;
+    animProgress+=dt*0.065*playSpeed;
+    if(animProgress>=1){animProgress=1;isPlaying=false;updatePlayBtn();}
+  }
+  lastTime=time; pulsePhase=(time/1000)*2;
+  render(); requestAnimationFrame(animate);
+}
+
+// ============ CONTROLS ============
+function updatePlayBtn(){
+  const icon=document.getElementById('playIcon');
+  icon.innerHTML=isPlaying?'<rect x="5" y="3" width="4" height="18"/><rect x="14" y="3" width="4" height="18"/>':'<polygon points="6,3 20,12 6,21"/>';
+}
+document.getElementById('playBtn').addEventListener('click',()=>{if(animProgress>=1)animProgress=0;isPlaying=!isPlaying;updatePlayBtn();});
+document.getElementById('timelineSlider').addEventListener('input',e=>{animProgress=e.target.value/1000;isPlaying=false;updatePlayBtn();});
+document.getElementById('speedBtn').addEventListener('click',e=>{
+  const sp=[0.5,1,2,3],lb=['0.5x','1x','2x','3x'];let i=sp.indexOf(playSpeed);i=(i+1)%sp.length;playSpeed=sp[i];e.target.textContent=lb[i];
+});
+
+// ============ MOUSE ============
+canvas.addEventListener('mousemove',e=>{
+  const rect=canvas.getBoundingClientRect(), mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  if(mx<PADDING.left||mx>W-PADDING.right||my<PADDING.top||my>H-PADDING.bottom){
+    hoveredYear=null;tooltip.classList.remove('visible');eventPopup.classList.remove('visible');highlightWave=-1;hoveredEvent=null;return;
+  }
+  hoveredYear=xToYear(mx);
+  const cutoff=YEAR_START+animProgress*(YEAR_END-YEAR_START);
+  // Check events (waves + DK)
+  let closestEvt=null, closestDist=28;
+  for(let wi=0;wi<WAVES.length;wi++){
+    for(let ei=0;ei<WAVES[wi].events.length;ei++){
+      const ev=WAVES[wi].events[ei]; if(ev.year>cutoff)continue;
+      const ex=yearToX(ev.year),ey=valToY(waveValue(WAVES[wi],ev.year));
+      const d=Math.sqrt((mx-ex)**2+(my-ey)**2);
+      if(d<closestDist){closestDist=d;closestEvt={wIdx:wi,eIdx:ei,ex,ey};}
+    }
+  }
+  for(let ei=0;ei<DK_EVENTS.length;ei++){
+    const ev=DK_EVENTS[ei]; if(ev.year>cutoff)continue;
+    const ex=yearToX(ev.year),ey=valToY(dkValue(ev.year));
+    const d=Math.sqrt((mx-ex)**2+(my-ey)**2);
+    if(d<closestDist){closestDist=d;closestEvt={wIdx:-1,eIdx:ei,ex,ey};}
+  }
+  hoveredEvent=closestEvt;
+
+  if(closestEvt){
+    const isWave=closestEvt.wIdx>=0;
+    const evt=isWave?WAVES[closestEvt.wIdx].events[closestEvt.eIdx]:DK_EVENTS[closestEvt.eIdx];
+    const clr=isWave?WAVES[closestEvt.wIdx].color:getDKPhase(evt.year).textColor.replace(/[\d.]+\)$/,'0.9)');
+    const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const yr=Math.floor(evt.year),mi=Math.floor((evt.year-yr)*12);
+    document.getElementById('epDate').textContent=`${mn[Math.min(mi,11)]} ${yr}`;
+    document.getElementById('epDate').style.color=clr;
+    document.getElementById('epTitle').textContent=evt.label;
+    document.getElementById('epTitle').style.color=clr;
+    document.getElementById('epDesc').textContent=evt.desc;
+    document.getElementById('epSource').textContent=evt.source;
+    eventPopup.style.borderColor=clr;eventPopup.style.border=`1px solid ${clr}`;
+    let px=closestEvt.ex+20,py=closestEvt.ey-40;
+    if(px+310>W)px=closestEvt.ex-320;if(py<0)py=10;if(py+170>H)py=H-180;
+    eventPopup.style.left=px+'px';eventPopup.style.top=py+'px';
+    eventPopup.classList.add('visible');tooltip.classList.remove('visible');
+  } else {
+    eventPopup.classList.remove('visible');
+    let cw=-1,cd=Infinity;
+    for(let i=0;i<WAVES.length;i++){const v=waveValue(WAVES[i],hoveredYear);if(v<0.01)continue;const d=Math.abs(my-valToY(v));if(d<cd&&d<45){cd=d;cw=i;}}
+    // Check DK line proximity
+    const dkD=Math.abs(my-valToY(dkValue(hoveredYear)));
+    if(dkD<cd&&dkD<35){highlightWave=-2;}else{highlightWave=cw;}
+
+    const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const yr=Math.floor(hoveredYear),mi=Math.floor((hoveredYear-yr)*12);
+    tooltipYear.textContent=`${mn[Math.min(mi,11)]} ${yr}`;
+    let html='';
+    // DK value
+    const dkv=dkValue(hoveredYear), dkPct=Math.round(dkv*100);
+    const phase=getDKPhase(hoveredYear);
+    html+=`<div class="tooltip-item"><div class="tooltip-dot" style="background:#e8e8e8"></div><div class="tooltip-label">Market Confidence</div><div class="tooltip-value" style="color:#e8e8e8">${dkPct}%</div></div>`;
+    for(let i=0;i<WAVES.length;i++){
+      const v=waveValue(WAVES[i],hoveredYear);if(v<0.005)continue;
+      const pct=Math.round(v*100);
+      const lvls=['Minimal','Low','Moderate','High','Very High','Critical','Max'];
+      html+=`<div class="tooltip-item" style="opacity:${highlightWave===i?1:0.5}"><div class="tooltip-dot" style="background:${WAVES[i].color}"></div><div class="tooltip-label">${WAVES[i].shortName}</div><div class="tooltip-value" style="color:${WAVES[i].color}">${lvls[Math.min(Math.floor(v*6),6)]} (${pct}%)</div></div>`;
+    }
+    tooltipItems.innerHTML=html;
+    tooltipDKPhase.textContent=`${phase.label} (${dkPct}%)`;
+    tooltipDKPhase.style.color=phase.textColor.replace(/[\d.]+\)$/,'0.9)');
+    tooltipDK.style.display='block';
+
+    let tx=mx+20,ty=my-20;if(tx+280>W)tx=mx-290;if(ty<0)ty=10;if(ty+220>H)ty=H-230;
+    tooltip.style.left=tx+'px';tooltip.style.top=ty+'px';tooltip.classList.add('visible');
+  }
+  // Active card
+  let maxV=0,maxI=-1;
+  for(let i=0;i<WAVES.length;i++){const v=waveValue(WAVES[i],hoveredYear);if(v>maxV){maxV=v;maxI=i;}}
+  document.querySelectorAll('.era-card').forEach((c,i)=>c.classList.toggle('active',i===maxI));
+});
+
+canvas.addEventListener('mouseleave',()=>{hoveredYear=null;hoveredEvent=null;tooltip.classList.remove('visible');eventPopup.classList.remove('visible');highlightWave=-1;});
+
+document.querySelectorAll('.era-card').forEach((c,i)=>{
+  c.addEventListener('mouseenter',()=>{highlightWave=i;});
+  c.addEventListener('mouseleave',()=>{highlightWave=-1;document.querySelectorAll('.era-card').forEach(c=>c.classList.remove('active'));});
+});
+
+function buildYearLabels(){
+  const c=document.getElementById('yearLabels');c.innerHTML='';
+  for(let yr=2023;yr<=2029;yr++){const s=document.createElement('span');s.className='year-label';s.textContent=yr;c.appendChild(s);}
+}
+
+function init(){resize();buildYearLabels();animProgress=0;requestAnimationFrame(animate);setTimeout(()=>{isPlaying=true;updatePlayBtn();},800);}
+window.addEventListener('resize',resize);
+init();
+</script>
+</body>
+</html>
