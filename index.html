@@ -179,6 +179,35 @@
   .node-valley .dk-tag { background: rgba(59,130,246,0.1); color: var(--dk-valley); border: 1px solid rgba(59,130,246,0.2); }
   .node-plateau .dk-tag { background: rgba(245,158,11,0.1); color: var(--dk-plateau); border: 1px solid rgba(245,158,11,0.2); }
 
+  /* Chart Guide & Metric Explanations */
+  .chart-guide-toggle {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--text-muted); cursor: pointer; padding: 10px 0 4px;
+    border: none; background: none; transition: color 0.2s; width: 100%;
+  }
+  .chart-guide-toggle:hover { color: var(--text-secondary); }
+  .chart-guide-toggle .icon-info { width: 14px; height: 14px; flex-shrink: 0; }
+  .chart-guide-toggle .icon-chevron { width: 12px; height: 12px; margin-left: auto; transition: transform 0.3s; flex-shrink: 0; }
+  .chart-guide-toggle.open .icon-chevron { transform: rotate(180deg); }
+  .chart-guide {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 12px; max-height: 0; overflow: hidden; opacity: 0;
+    transition: max-height 0.5s ease, opacity 0.3s ease, padding 0.3s ease;
+    padding: 0;
+  }
+  .chart-guide.open { max-height: 800px; opacity: 1; padding: 12px 0 6px; }
+  .metric-card {
+    background: rgba(148,163,184,0.03); border: 1px solid rgba(148,163,184,0.08);
+    border-radius: 10px; padding: 14px 16px;
+  }
+  .metric-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .metric-card-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .metric-card-name { font-size: 12px; font-weight: 600; }
+  .metric-card-unit { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 6px; text-transform: uppercase; }
+  .metric-card-desc { font-size: 11px; color: var(--text-secondary); line-height: 1.55; }
+  .metric-card-note { font-size: 10px; color: var(--text-muted); margin-top: 6px; font-style: italic; line-height: 1.4; }
+
   @media (max-width: 1000px) {
     .eras-grid { grid-template-columns: repeat(2, 1fr); }
     .dk-flow { flex-wrap: wrap; gap: 8px; }
@@ -187,6 +216,7 @@
     header h1 { font-size: 2rem; }
     .container { padding: 20px 16px 40px; }
     .chart-wrapper { height: 480px; }
+    .chart-guide { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
   }
   /* Author Footer */
   .author-footer { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 20px; padding: 32px 36px; position: relative; overflow: hidden; }
@@ -257,6 +287,17 @@
     .event-popup-title { font-size: 12px; }
     .event-popup-desc { font-size: 10px; }
     .event-popup-source { font-size: 8px; }
+
+    .chart-guide-toggle { font-size: 10px; padding: 8px 0 2px; }
+    .chart-guide-toggle .icon-info { width: 12px; height: 12px; }
+    .chart-guide-toggle .icon-chevron { width: 10px; height: 10px; }
+    .chart-guide { grid-template-columns: 1fr; gap: 8px; }
+    .chart-guide.open { max-height: 1200px; }
+    .metric-card { padding: 12px 14px; border-radius: 8px; }
+    .metric-card-name { font-size: 11px; }
+    .metric-card-unit { font-size: 8px; }
+    .metric-card-desc { font-size: 10px; }
+    .metric-card-note { font-size: 9px; }
   }
 </style>
 </head>
@@ -296,6 +337,69 @@
         <div class="year-labels" id="yearLabels"></div>
       </div>
       <button class="speed-btn" id="speedBtn">1x</button>
+    </div>
+    <div style="padding: 0 10px;">
+      <button class="chart-guide-toggle" id="guideToggle">
+        <svg class="icon-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        How to read this chart &mdash; metric definitions &amp; methodology
+        <svg class="icon-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="chart-guide" id="chartGuide">
+        <div class="metric-card">
+          <div class="metric-card-header">
+            <div class="metric-card-dot" style="background:#e8e8e8"></div>
+            <div class="metric-card-name" style="color:#e8e8e8">Market Confidence (DK Curve)</div>
+          </div>
+          <div class="metric-card-unit">Scale: 0&ndash;100% &middot; Composite Index</div>
+          <div class="metric-card-desc">Aggregate market belief that AI can replace human developers. Combines VC investment sentiment, corporate hiring intentions, media narrative tone, and tech stock valuations. Follows the Dunning-Kruger cognitive bias pattern: overconfidence peaks, reality crashes in, then stable productivity emerges.</div>
+          <div class="metric-card-note">Shaded band in prediction zone shows &plusmn;15% uncertainty margin that widens over time.</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-card-header">
+            <div class="metric-card-dot" style="background:#ef4444"></div>
+            <div class="metric-card-name" style="color:#ef4444">Wave 1: ChatGPT Effect</div>
+          </div>
+          <div class="metric-card-unit">Peak: ~45% &middot; Center: Mid-2023 &middot; Window: ~9 months</div>
+          <div class="metric-card-desc">Immediate market shock from ChatGPT's launch. Measures layoff velocity, traffic displacement (Stack Overflow &minus;50%, Chegg &minus;48%), and panic-driven corporate restructuring across Big Tech.</div>
+          <div class="metric-card-note">Asymmetric Gaussian: fast rise (0.8&sigma;), slower decay (1.3&sigma;).</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-card-header">
+            <div class="metric-card-dot" style="background:#06b6d4"></div>
+            <div class="metric-card-name" style="color:#06b6d4">Wave 2: Agentic Builders</div>
+          </div>
+          <div class="metric-card-unit">Peak: ~62% &middot; Center: Early 2024 &middot; Window: ~13 months</div>
+          <div class="metric-card-desc">Impact of AI coding tools (Copilot 1.8M users, Cursor, Devin). Measures junior/mid-role displacement (&minus;40%), bootcamp closures, and the $600B gap between AI infrastructure investment and actual revenue.</div>
+          <div class="metric-card-note">Wider distribution reflects gradual tool adoption across organizations.</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-card-header">
+            <div class="metric-card-dot" style="background:#a855f7"></div>
+            <div class="metric-card-name" style="color:#a855f7">Wave 3: Claude Code Era</div>
+          </div>
+          <div class="metric-card-unit">Peak: ~82% &middot; Center: Early 2026 &middot; Window: ~10 months</div>
+          <div class="metric-card-desc">The agentic AI revolution. Autonomous code agents (Claude Code, Codex, Gemini CLI) drive peak disruption. Mid-tier engineer displacement reaches &minus;60%. Technical debt and security crises trigger the correction.</div>
+          <div class="metric-card-note">Highest amplitude wave. Coincides with the DK "Peak of Mount Stupid."</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-card-header">
+            <div class="metric-card-dot" style="background:#f59e0b"></div>
+            <div class="metric-card-name" style="color:#f59e0b">Wave 4: Super Teams</div>
+          </div>
+          <div class="metric-card-unit">Peak: ~75% &middot; Center: Late 2029 &middot; Window: ~16 months</div>
+          <div class="metric-card-desc">The equilibrium wave. Market recovery stabilizes into the ~6-person Super Team model (fullstack, security, ML, systems, maintainers + AI agents). Productivity gains become sustainable and repeatable.</div>
+          <div class="metric-card-note">Marks the DK "Plateau of Productivity." Wider sigma reflects gradual adoption.</div>
+        </div>
+        <div class="metric-card" style="border-color: rgba(168,85,247,0.15);">
+          <div class="metric-card-header">
+            <svg width="10" height="10" viewBox="0 0 10 10" style="flex-shrink:0"><line x1="0" y1="5" x2="10" y2="5" stroke="rgba(168,85,247,0.6)" stroke-width="1.5" stroke-dasharray="3 2"/></svg>
+            <div class="metric-card-name" style="color:rgba(168,85,247,0.8)">Methodology &amp; Prediction Boundary</div>
+          </div>
+          <div class="metric-card-unit">Historical: pre-late 2025 &middot; Predicted: late 2025 onwards</div>
+          <div class="metric-card-desc">Dashed purple line marks where historical data ends and predictions begin. Wave shapes use asymmetric Gaussian distributions (fast rise, slower decay). The DK composite curve uses Catmull-Rom spline interpolation across 24 control points.</div>
+          <div class="metric-card-note">All events post-boundary are modeled projections. Diamond markers (&loz;) denote predicted events; circles denote historical.</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -646,7 +750,7 @@ function drawGrid() {
   if (!isMobile) {
     ctx.save(); ctx.translate(14, H/2); ctx.rotate(-Math.PI/2);
     ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(148,163,184,0.25)'; ctx.font = '11px "Inter",sans-serif';
-    ctx.fillText('Disruption Impact / Market Confidence', 0, 0); ctx.restore();
+    ctx.fillText('Disruption Intensity / Confidence Index (0\u2013100%)', 0, 0); ctx.restore();
   }
   // X labels
   ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillStyle = 'rgba(148,163,184,0.4)';
@@ -858,6 +962,91 @@ function drawHoverCross() {
   ctx.restore();
 }
 
+function drawUncertaintyBands(cutoff) {
+  if (cutoff <= PREDICTION_START) return;
+  const steps = 300;
+  const startYr = PREDICTION_START;
+  const endYr = Math.min(YEAR_END, cutoff);
+  const stepSz = (endYr - startYr) / steps;
+  const ptsU = [], ptsL = [];
+  for (let i = 0; i <= steps; i++) {
+    const yr = startYr + i * stepSz;
+    const v = dkValue(yr);
+    const yearsOut = yr - PREDICTION_START;
+    const unc = 0.02 + yearsOut * 0.028;
+    ptsU.push({ x: yearToX(yr), y: valToY(Math.min(1, v + unc)) });
+    ptsL.push({ x: yearToX(yr), y: valToY(Math.max(0, v - unc)) });
+  }
+  if (ptsU.length < 2) return;
+  ctx.save();
+  ctx.beginPath();
+  for (let i = 0; i < ptsU.length; i++) { i === 0 ? ctx.moveTo(ptsU[i].x, ptsU[i].y) : ctx.lineTo(ptsU[i].x, ptsU[i].y); }
+  for (let i = ptsL.length - 1; i >= 0; i--) { ctx.lineTo(ptsL[i].x, ptsL[i].y); }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(232,232,232,0.05)';
+  ctx.fill();
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = 'rgba(232,232,232,0.1)';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath(); ptsU.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)); ctx.stroke();
+  ctx.beginPath(); ptsL.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)); ctx.stroke();
+  ctx.setLineDash([]);
+  // uncertainty label
+  const labelYr = Math.min(endYr, PREDICTION_START + 1.2);
+  if (labelYr > PREDICTION_START + 0.3) {
+    const lx = yearToX(labelYr);
+    const uVal = dkValue(labelYr);
+    const unc = 0.02 + (labelYr - PREDICTION_START) * 0.028;
+    const ly = valToY(uVal + unc) - 6;
+    ctx.font = `400 ${isMobile ? 7 : 8}px "JetBrains Mono", monospace`;
+    ctx.fillStyle = 'rgba(232,232,232,0.3)';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('\u00b1 uncertainty', lx, ly);
+  }
+  ctx.restore();
+}
+
+function drawKeyAnnotations(cutoff) {
+  if (hoveredYear) return;
+  const annotations = [
+    { year: 2026.2, text: '88%', subtext: 'Peak overconfidence', color: 'rgba(239,68,68,0.85)', anchor: 'right', offX: 20, offY: -32 },
+    { year: 2028.3, text: '25%', subtext: 'Market bottom', color: 'rgba(59,130,246,0.85)', anchor: 'right', offX: 20, offY: -28 },
+    { year: 2030.2, text: '64%', subtext: 'New equilibrium', color: 'rgba(245,158,11,0.85)', anchor: 'left', offX: -20, offY: -32 },
+  ];
+  const fs = isMobile ? 8 : 10;
+  const subFs = isMobile ? 7 : 8;
+  for (const ann of annotations) {
+    if (ann.year > cutoff) continue;
+    const x = yearToX(ann.year), y = valToY(dkValue(ann.year));
+    const tx = x + ann.offX, ty = y + ann.offY;
+    // connector
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(x, y - 6); ctx.lineTo(tx, ty + 10);
+    ctx.strokeStyle = ann.color; ctx.globalAlpha = 0.4; ctx.lineWidth = 1; ctx.stroke();
+    ctx.globalAlpha = 1;
+    // text
+    ctx.font = `700 ${fs}px "JetBrains Mono", monospace`;
+    const valW = ctx.measureText(ann.text).width;
+    ctx.font = `400 ${subFs}px "Inter", sans-serif`;
+    const subW = ctx.measureText(ann.subtext).width;
+    const boxW = Math.max(valW, subW) + 14;
+    const boxH = isMobile ? 24 : 28;
+    const bx = ann.anchor === 'right' ? tx : tx - boxW;
+    const by = ty - boxH + 10;
+    ctx.fillStyle = 'rgba(10,14,26,0.88)';
+    ctx.strokeStyle = ann.color; ctx.lineWidth = 1; ctx.globalAlpha = 0.9;
+    ctx.beginPath(); ctx.roundRect(bx, by, boxW, boxH, 5); ctx.fill(); ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.font = `700 ${fs}px "JetBrains Mono", monospace`;
+    ctx.fillStyle = ann.color; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText(ann.text, bx + 7, by + 4);
+    ctx.font = `400 ${subFs}px "Inter", sans-serif`;
+    ctx.fillStyle = 'rgba(148,163,184,0.7)';
+    ctx.fillText(ann.subtext, bx + 7, by + (isMobile ? 14 : 16));
+    ctx.restore();
+  }
+}
+
 function render() {
   ctx.clearRect(0,0,W,H);
   ctx.fillStyle='rgba(17,24,39,0.5)';ctx.fillRect(0,0,W,H);
@@ -866,8 +1055,10 @@ function render() {
   drawPredictionZones();
   drawCurrentYearLine();
   const cutoff = YEAR_START + animProgress*(YEAR_END-YEAR_START);
+  drawUncertaintyBands(cutoff);
   for(let i=0;i<WAVES.length;i++) drawWave(WAVES[i],i,cutoff);
   drawDKComposite(cutoff);
+  drawKeyAnnotations(cutoff);
   drawHoverCross();
   drawLegend();
   document.getElementById('timelineSlider').value = animProgress*1000;
@@ -892,6 +1083,10 @@ document.getElementById('playBtn').addEventListener('click',()=>{if(animProgress
 document.getElementById('timelineSlider').addEventListener('input',e=>{animProgress=e.target.value/1000;isPlaying=false;updatePlayBtn();});
 document.getElementById('speedBtn').addEventListener('click',e=>{
   const sp=[0.5,1,2,3],lb=['0.5x','1x','2x','3x'];let i=sp.indexOf(playSpeed);i=(i+1)%sp.length;playSpeed=sp[i];e.target.textContent=lb[i];
+});
+document.getElementById('guideToggle').addEventListener('click',function(){
+  this.classList.toggle('open');
+  document.getElementById('chartGuide').classList.toggle('open');
 });
 
 // ============ MOUSE ============
