@@ -186,6 +186,7 @@
     .dk-node { min-width: calc(50% - 8px); }
     header h1 { font-size: 2rem; }
     .container { padding: 20px 16px 40px; }
+    .chart-wrapper { height: 480px; }
   }
   /* Author Footer */
   .author-footer { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 20px; padding: 32px 36px; position: relative; overflow: hidden; }
@@ -202,12 +203,60 @@
   .author-copyright { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text-muted); margin-top: 14px; letter-spacing: 0.5px; opacity: 0.6; }
 
   @media (max-width: 600px) {
-    .eras-grid { grid-template-columns: 1fr; }
-    .dk-node { min-width: 100%; }
-    .chart-wrapper { height: 420px; }
-    header h1 { font-size: 1.6rem; }
+    .container { padding: 16px 10px 30px; }
+    header { margin-bottom: 28px; }
+    header h1 { font-size: 1.45rem; letter-spacing: -1px; }
+    header p { font-size: 0.88rem; line-height: 1.5; }
+
+    .chart-section { border-radius: 14px; padding: 18px 8px 14px; margin-bottom: 20px; }
+    .chart-wrapper { height: 300px; }
+
+    .controls { gap: 10px; padding: 12px 4px 0; }
+    .play-btn { width: 40px; height: 40px; }
+    .play-btn svg { width: 15px; height: 15px; }
+    .speed-btn { font-size: 11px; padding: 5px 10px; }
+    .timeline-slider::-webkit-slider-thumb { width: 28px; height: 28px; }
+    .timeline-slider::-moz-range-thumb { width: 28px; height: 28px; }
+    .year-labels { margin-left: 50px; padding-top: 6px; }
+    .year-label { font-size: 9px; }
+
+    .eras-grid { grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px; }
+    .era-card { padding: 16px; border-radius: 12px; }
+    .era-card:hover, .era-card.active { transform: none; }
+    .era-title { font-size: 0.92rem; }
+    .era-desc { font-size: 11.5px; }
+    .era-stats { gap: 10px; margin-top: 10px; padding-top: 10px; }
+    .era-stat-value { font-size: 15px; }
+
+    .dk-section { padding: 20px 14px; border-radius: 14px; margin-bottom: 20px; }
+    .dk-title { font-size: 1.1rem; }
+    .dk-subtitle { font-size: 12px; margin-bottom: 18px; }
+    .dk-flow { flex-direction: column; gap: 10px; }
+    .dk-arrow { display: none; }
+    .dk-node { min-width: 100%; padding: 16px 12px; border-radius: 10px; }
+    .dk-node-title { font-size: 12px; }
+    .dk-node-team { font-size: 18px; }
+    .dk-node-desc { font-size: 10px; }
+
+    .author-footer { padding: 20px 14px; border-radius: 14px; }
     .author-top { flex-direction: column; align-items: flex-start; gap: 4px; }
+    .author-name { font-size: 1rem; }
+    .author-title { font-size: 11px; }
     .author-credentials { gap: 5px; }
+    .author-cred { font-size: 9px; padding: 3px 8px; }
+    .author-note { font-size: 10px; }
+    .author-copyright { font-size: 8px; }
+
+    .tooltip { min-width: 200px; max-width: 220px; padding: 10px 14px; font-size: 12px; border-radius: 10px; }
+    .tooltip-year { font-size: 10px; }
+    .tooltip-item { gap: 6px; }
+    .tooltip-dot { width: 6px; height: 6px; }
+    .tooltip-label { font-size: 11px; }
+    .tooltip-value { font-size: 11px; }
+    .event-popup { max-width: 220px; padding: 10px 12px; border-radius: 8px; }
+    .event-popup-title { font-size: 12px; }
+    .event-popup-desc { font-size: 10px; }
+    .event-popup-source { font-size: 8px; }
   }
 </style>
 </head>
@@ -508,12 +557,17 @@ const tooltipDKPhase = document.getElementById('tooltipDKPhase');
 const eventPopup = document.getElementById('eventPopup');
 
 let W, H;
-const PADDING = { top: 70, right: 30, bottom: 55, left: 65 };
+let PADDING = { top: 70, right: 30, bottom: 55, left: 65 };
 let dpr = window.devicePixelRatio || 1;
+let isMobile = false;
 
 function resize() {
   const rect = wrapper.getBoundingClientRect();
   W = rect.width; H = rect.height;
+  isMobile = W < 500;
+  PADDING = isMobile
+    ? { top: 44, right: 12, bottom: 40, left: 38 }
+    : { top: 70, right: 30, bottom: 55, left: 65 };
   canvas.width = W * dpr; canvas.height = H * dpr;
   canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -560,36 +614,45 @@ let hoveredYear = null, highlightWave = -1, hoveredEvent = null, pulsePhase = 0;
 
 // ============ DRAWING ============
 function drawDKPhaseZones() {
+  const fontSize = isMobile ? 7 : 9;
   for (const phase of DK_PHASES) {
     const x1 = yearToX(phase.start), x2 = yearToX(phase.end);
     ctx.fillStyle = phase.color;
     ctx.fillRect(x1, PADDING.top, x2 - x1, H - PADDING.top - PADDING.bottom);
-    // Phase label at top
-    ctx.font = '600 9px "JetBrains Mono", monospace';
+    ctx.font = `600 ${fontSize}px "JetBrains Mono", monospace`;
     ctx.fillStyle = phase.textColor;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     const cx = (x1 + x2) / 2;
-    ctx.fillText(phase.label, cx, PADDING.top + 4);
+    ctx.fillText(phase.label, cx, PADDING.top + 3);
   }
 }
 
 function drawGrid() {
+  const yLabelFont = isMobile ? 9 : 11;
+  const xLabelFont = isMobile ? 9 : 12;
   ctx.strokeStyle = 'rgba(148,163,184,0.05)';
   ctx.lineWidth = 1;
   for (let v = 0; v <= 1; v += 0.2) { const y = valToY(v); ctx.beginPath(); ctx.moveTo(PADDING.left, y); ctx.lineTo(W - PADDING.right, y); ctx.stroke(); }
   for (let yr = 2023; yr <= 2030; yr++) { const x = yearToX(yr); ctx.beginPath(); ctx.moveTo(x, PADDING.top); ctx.lineTo(x, H - PADDING.bottom); ctx.stroke(); }
   // Y labels
-  ctx.font = '11px "JetBrains Mono", monospace'; ctx.fillStyle = 'rgba(148,163,184,0.35)';
+  ctx.font = `${yLabelFont}px "JetBrains Mono", monospace`; ctx.fillStyle = 'rgba(148,163,184,0.35)';
   ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-  ['None','Low','Medium','High','Critical','Max'].forEach((l,i) => ctx.fillText(l, PADDING.left-10, valToY(i/5)));
-  ctx.save(); ctx.translate(14, H/2); ctx.rotate(-Math.PI/2);
-  ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(148,163,184,0.25)'; ctx.font = '11px "Inter",sans-serif';
-  ctx.fillText('Disruption Impact / Market Confidence', 0, 0); ctx.restore();
+  if (isMobile) {
+    ['None','Low','Med','High','Crit','Max'].forEach((l,i) => ctx.fillText(l, PADDING.left-6, valToY(i/5)));
+  } else {
+    ['None','Low','Medium','High','Critical','Max'].forEach((l,i) => ctx.fillText(l, PADDING.left-10, valToY(i/5)));
+  }
+  if (!isMobile) {
+    ctx.save(); ctx.translate(14, H/2); ctx.rotate(-Math.PI/2);
+    ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(148,163,184,0.25)'; ctx.font = '11px "Inter",sans-serif';
+    ctx.fillText('Disruption Impact / Market Confidence', 0, 0); ctx.restore();
+  }
   // X labels
   ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillStyle = 'rgba(148,163,184,0.4)';
-  ctx.font = '12px "JetBrains Mono", monospace';
-  for (let yr = 2023; yr <= 2030; yr++) ctx.fillText(yr+'', yearToX(yr), H-PADDING.bottom+12);
+  ctx.font = `${xLabelFont}px "JetBrains Mono", monospace`;
+  const xStep = isMobile ? 2 : 1;
+  for (let yr = 2023; yr <= 2030; yr += xStep) ctx.fillText(yr+'', yearToX(yr), H-PADDING.bottom+8);
 }
 
 function drawPredictionZones() {
@@ -599,8 +662,8 @@ function drawPredictionZones() {
   ctx.strokeStyle = 'rgba(168,85,247,0.2)'; ctx.lineWidth = 1; ctx.setLineDash([6,4]);
   ctx.beginPath(); ctx.moveTo(px, PADDING.top); ctx.lineTo(px, H-PADDING.bottom); ctx.stroke();
   ctx.setLineDash([]);
-  ctx.font = '10px "JetBrains Mono", monospace'; ctx.fillStyle = 'rgba(168,85,247,0.4)';
-  ctx.textAlign = 'left'; ctx.fillText('PREDICTED', px+6, H-PADDING.bottom-14);
+  ctx.font = `${isMobile?8:10}px "JetBrains Mono", monospace`; ctx.fillStyle = 'rgba(168,85,247,0.4)';
+  ctx.textAlign = 'left'; ctx.fillText('PREDICTED', px+4, H-PADDING.bottom-10);
   // Stabilization zone
   const sx = yearToX(STABILIZATION_START), sEnd = W - PADDING.right;
   ctx.fillStyle = 'rgba(245,158,11,0.03)';
@@ -609,7 +672,7 @@ function drawPredictionZones() {
   ctx.beginPath(); ctx.moveTo(sx, PADDING.top); ctx.lineTo(sx, H-PADDING.bottom); ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle = 'rgba(245,158,11,0.45)';
-  ctx.fillText('STABILIZATION', sx+6, H-PADDING.bottom-14);
+  ctx.fillText(isMobile?'STABLE':'STABILIZATION', sx+4, H-PADDING.bottom-10);
   ctx.restore();
 }
 
@@ -618,10 +681,10 @@ function drawCurrentYearLine() {
   ctx.save();
   ctx.strokeStyle = 'rgba(34,211,238,0.45)'; ctx.lineWidth = 1.5; ctx.setLineDash([4,4]);
   ctx.beginPath(); ctx.moveTo(x, PADDING.top); ctx.lineTo(x, H-PADDING.bottom); ctx.stroke(); ctx.setLineDash([]);
-  const bw = 72, bh = 18, bx = x-bw/2, by = PADDING.top-24;
+  const bw = isMobile ? 56 : 72, bh = isMobile ? 15 : 18, bx = x-bw/2, by = PADDING.top-(isMobile?18:24);
   ctx.fillStyle = 'rgba(34,211,238,0.1)'; ctx.strokeStyle = 'rgba(34,211,238,0.35)'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.roundRect(bx,by,bw,bh,4); ctx.fill(); ctx.stroke();
-  ctx.font = '600 9px "JetBrains Mono",monospace'; ctx.fillStyle = '#22d3ee';
+  ctx.font = `600 ${isMobile?7:9}px "JetBrains Mono",monospace`; ctx.fillStyle = '#22d3ee';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('NOW  2026', x, by+bh/2);
   ctx.restore();
 }
@@ -672,13 +735,17 @@ function drawWaveEvts(wave, wIdx, cutoff) {
     else{ctx.beginPath();ctx.arc(ex,ey,sz,0,Math.PI*2);}
     ctx.fillStyle=isH?'#fff':wave.color;ctx.fill();
     if(e.major||isH||highlightWave===wIdx){
-      const above=e.labelPos==='above', off=above?-20:20;
-      ctx.font=`${isH?'600':'400'} ${isH?'10':'9'}px "Inter",sans-serif`;
-      const tw=ctx.measureText(e.label).width, lx=ex, ly=ey+off;
-      ctx.fillStyle=`rgba(${r},${g},${b},${isH?0.15:0.06})`;
-      ctx.beginPath();ctx.roundRect(lx-tw/2-5,ly-7,tw+10,14,3);ctx.fill();
-      ctx.fillStyle=isH?'#fff':`rgba(${r},${g},${b},0.85)`;
-      ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(e.label,lx,ly);
+      if(!isMobile||isH||e.major){
+        const above=e.labelPos==='above', off=above?(isMobile?-14:-20):(isMobile?14:20);
+        const fs=isMobile?(isH?8:7):(isH?10:9);
+        ctx.font=`${isH?'600':'400'} ${fs}px "Inter",sans-serif`;
+        const lbl=isMobile&&!isH&&e.label.length>22?e.label.slice(0,20)+'…':e.label;
+        const tw=ctx.measureText(lbl).width, lx=ex, ly=ey+off;
+        ctx.fillStyle=`rgba(${r},${g},${b},${isH?0.15:0.06})`;
+        ctx.beginPath();ctx.roundRect(lx-tw/2-4,ly-6,tw+8,12,3);ctx.fill();
+        ctx.fillStyle=isH?'#fff':`rgba(${r},${g},${b},0.85)`;
+        ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(lbl,lx,ly);
+      }
     }
   }
 }
@@ -734,33 +801,41 @@ function drawDKComposite(cutoff) {
     ctx.strokeStyle = isH ? '#fff' : 'rgba(255,255,255,0.3)'; ctx.lineWidth = 1.5; ctx.stroke();
     if(isH){ctx.beginPath();ctx.arc(ex,ey,sz+6,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.08)';ctx.fill();}
     // Label
-    const above=evt.labelPos==='above', off=above?-20:20;
-    ctx.font=`${isH?'600':'500'} ${isH?'10':'9'}px "Inter",sans-serif`;
-    const tw=ctx.measureText(evt.label).width;
-    ctx.fillStyle=isH?'rgba(255,255,255,0.15)':'rgba(255,255,255,0.05)';
-    ctx.beginPath();ctx.roundRect(ex-tw/2-5,ey+off-7,tw+10,14,3);ctx.fill();
-    ctx.fillStyle=isH?'#fff':phase.textColor.replace(/[\d.]+\)$/,'0.8)');
-    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(evt.label,ex,ey+off);
+    if(!isMobile||isH){
+      const above=evt.labelPos==='above', off=above?(isMobile?-14:-20):(isMobile?14:20);
+      const fs=isMobile?(isH?8:7):(isH?10:9);
+      ctx.font=`${isH?'600':'500'} ${fs}px "Inter",sans-serif`;
+      const lbl=isMobile&&!isH&&evt.label.length>22?evt.label.slice(0,20)+'…':evt.label;
+      const tw=ctx.measureText(lbl).width;
+      ctx.fillStyle=isH?'rgba(255,255,255,0.15)':'rgba(255,255,255,0.05)';
+      ctx.beginPath();ctx.roundRect(ex-tw/2-4,ey+off-6,tw+8,12,3);ctx.fill();
+      ctx.fillStyle=isH?'#fff':phase.textColor.replace(/[\d.]+\)$/,'0.8)');
+      ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(lbl,ex,ey+off);
+    }
   }
 }
 
 function drawLegend() {
-  let x=PADDING.left+10, y=PADDING.top+22;
+  const fontSize = isMobile ? 8 : 10;
+  const lineW = isMobile ? 14 : 20;
+  const gap = isMobile ? 14 : 18;
+  const startY = isMobile ? 16 : 22;
+  let x=PADDING.left+6, y=PADDING.top+startY;
   // DK composite first
   ctx.globalAlpha = highlightWave>=0 ? 0.3 : 1;
-  ctx.strokeStyle='#e8e8e8'; ctx.lineWidth=2.5;
-  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+20,y);ctx.stroke();
-  ctx.font='500 10px "Inter",sans-serif'; ctx.fillStyle='rgba(232,232,232,0.8)';
-  ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText('Market Confidence (DK)',x+28,y);
-  y+=20;
+  ctx.strokeStyle='#e8e8e8'; ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+lineW,y);ctx.stroke();
+  ctx.font=`500 ${fontSize}px "Inter",sans-serif`; ctx.fillStyle='rgba(232,232,232,0.8)';
+  ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(isMobile?'Confidence (DK)':'Market Confidence (DK)',x+lineW+6,y);
+  y+=gap+2;
   for(let i=0;i<WAVES.length;i++){
     const w=WAVES[i], isA=highlightWave===i;
     ctx.globalAlpha=(highlightWave>=0&&!isA)?0.25:1;
-    ctx.fillStyle=w.color;ctx.fillRect(x,y-1,20,3);
-    ctx.font=`${isA?'600':'400'} 10px "Inter",sans-serif`;
+    ctx.fillStyle=w.color;ctx.fillRect(x,y-1,lineW,2);
+    ctx.font=`${isA?'600':'400'} ${fontSize}px "Inter",sans-serif`;
     ctx.fillStyle=isA?w.color:'rgba(226,232,240,0.6)';
-    ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(w.shortName,x+28,y);
-    y+=18;
+    ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(w.shortName,x+lineW+6,y);
+    y+=gap;
   }
   ctx.globalAlpha=1;
 }
@@ -858,8 +933,9 @@ canvas.addEventListener('mousemove',e=>{
     document.getElementById('epDesc').textContent=evt.desc;
     document.getElementById('epSource').textContent=evt.source;
     eventPopup.style.borderColor=clr;eventPopup.style.border=`1px solid ${clr}`;
-    let px=closestEvt.ex+20,py=closestEvt.ey-40;
-    if(px+310>W)px=closestEvt.ex-320;if(py<0)py=10;if(py+170>H)py=H-180;
+    const popW=isMobile?230:310;
+    let px=closestEvt.ex+16,py=closestEvt.ey-40;
+    if(px+popW>W)px=Math.max(4,closestEvt.ex-popW-10);if(py<0)py=4;if(py+170>H)py=H-180;
     eventPopup.style.left=px+'px';eventPopup.style.top=py+'px';
     eventPopup.classList.add('visible');tooltip.classList.remove('visible');
   } else {
@@ -889,7 +965,8 @@ canvas.addEventListener('mousemove',e=>{
     tooltipDKPhase.style.color=phase.textColor.replace(/[\d.]+\)$/,'0.9)');
     tooltipDK.style.display='block';
 
-    let tx=mx+20,ty=my-20;if(tx+280>W)tx=mx-290;if(ty<0)ty=10;if(ty+220>H)ty=H-230;
+    const tipW=isMobile?220:280;
+    let tx=mx+16,ty=my-20;if(tx+tipW>W)tx=Math.max(4,mx-tipW-10);if(ty<0)ty=4;if(ty+200>H)ty=H-210;
     tooltip.style.left=tx+'px';tooltip.style.top=ty+'px';tooltip.classList.add('visible');
   }
   // Active card
@@ -899,6 +976,24 @@ canvas.addEventListener('mousemove',e=>{
 });
 
 canvas.addEventListener('mouseleave',()=>{hoveredYear=null;hoveredEvent=null;tooltip.classList.remove('visible');eventPopup.classList.remove('visible');highlightWave=-1;});
+
+// Touch support for mobile
+function handleTouch(e) {
+  const touch = e.touches[0];
+  if (!touch) return;
+  e.preventDefault();
+  canvas.dispatchEvent(new MouseEvent('mousemove', {
+    clientX: touch.clientX, clientY: touch.clientY
+  }));
+}
+canvas.addEventListener('touchstart', handleTouch, { passive: false });
+canvas.addEventListener('touchmove', handleTouch, { passive: false });
+canvas.addEventListener('touchend', () => {
+  hoveredYear = null; hoveredEvent = null;
+  tooltip.classList.remove('visible');
+  eventPopup.classList.remove('visible');
+  highlightWave = -1;
+});
 
 document.querySelectorAll('.era-card').forEach((c,i)=>{
   c.addEventListener('mouseenter',()=>{highlightWave=i;});
